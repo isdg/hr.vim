@@ -1,0 +1,73 @@
+*hr.txt*  A reading-list sidebar backed by the `hr` CLI       *hr* *hr.vim*
+
+==============================================================================
+INTRODUCTION                                                    *hr-intro*
+
+hr.vim is a thin sidebar over the `hr` reading-list CLI. It lists articles,
+opens them in the main window, and maps a few keys to mark read/unread,
+favorite, alias, sync, and refresh. Pure Vimscript — works in Vim 8.1+ and
+Neovim.
+
+==============================================================================
+CONFIGURATION                                                   *hr-config*
+
+Set these globals before the plugin loads (or any time; they are read live):
+
+                                                                *g:hr_binary*
+g:hr_binary     CLI name or path.                       Default: "hr"
+
+                                                                *g:hr_vault*
+g:hr_vault      Vault directory. When empty, the vault is read from the
+                `vault = "..."` line in ~/.hrrc and the plugin :cd's into it.
+                When set, it is passed to the CLI as `-C <vault>`.
+                                                        Default: "" (use rc)
+
+                                                                *g:hr_side*
+g:hr_side       Sidebar side: "left" or "right".        Default: "left"
+
+                                                                *g:hr_width*
+g:hr_width      Sidebar width in columns.               Default: 60
+
+                                                                *g:hr_show_read*
+g:hr_show_read  1 to include read items, 0 for unread only.
+                                                        Default: 1
+
+==============================================================================
+COMMANDS                                                        *hr-commands*
+
+:Hr  :HrToggle          Toggle the sidebar.
+:HrOpen                 Open the sidebar (focus it if already open).
+:HrClose                Close the sidebar.
+:HrStart                Open panel only; close the initial empty [No Name]
+                        window if present. Entry point for the `hr` CLI.
+:HrRefresh              Re-fetch and redraw the list.
+:HrSync                 Run `hr sync`, then refresh.
+
+==============================================================================
+SIDEBAR KEYS                                                    *hr-keys*
+
+Active only inside the sidebar buffer:
+
+  <CR>, o     open the article under the cursor
+  r           mark read
+  u           mark unread
+  f           toggle favorite
+  a           set alias (rename the displayed label)
+  R           refresh
+  s           sync + refresh
+  q           close panel
+  ?           show this key list
+
+==============================================================================
+EXAMPLE                                                         *hr-example*
+
+Neovim (Lua): >
+    vim.g.hr_width = 50
+    vim.keymap.set("n", "<leader>r", "<Cmd>HrToggle<CR>",
+       { desc = "Toggle hr reading list" })
+<
+Vim (Vimscript): >
+    let g:hr_width = 50
+    nnoremap <leader>r <Cmd>HrToggle<CR>
+<
+ vim:tw=78:ts=8:ft=help:norl:
