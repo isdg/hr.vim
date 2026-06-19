@@ -16,7 +16,7 @@ Pure Vimscript — no Lua, no dependencies beyond the `hr` binary.
 **lazy.nvim**
 
 ```lua
-{ "isaigordeev/hr.vim", cmd = { "Hr", "HrToggle", "HrStart" },
+{ "isdg/hr.vim", cmd = { "Hr", "HrToggle", "HrStart" },
   keys = { { "<leader>r", "<Cmd>HrToggle<CR>", desc = "hr reading list" } } }
 ```
 
@@ -29,15 +29,15 @@ Local checkout while developing:
 **vim-plug**
 
 ```vim
-Plug 'isaigordeev/hr.vim'
+Plug 'isdg/hr.vim'
 ```
 
 **Built-in package (no manager)** — Vim or Neovim:
 
 ```sh
-git clone https://github.com/isaigordeev/hr.vim \
+git clone https://github.com/isdg/hr.vim \
   ~/.vim/pack/plugins/start/hr.vim          # Vim
-git clone https://github.com/isaigordeev/hr.vim \
+git clone https://github.com/isdg/hr.vim \
   ~/.config/nvim/pack/plugins/start/hr.vim  # Neovim
 ```
 
