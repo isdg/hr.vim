@@ -35,8 +35,11 @@ g:hr_show_read  1 to include read items, 0 for unread only.
 ==============================================================================
 COMMANDS                                                        *hr-commands*
 
-:Hr  :HrToggle          Toggle the sidebar.
-:HrOpen                 Open the sidebar (focus it if already open).
+:Hr  :HrToggle          Toggle the sidebar. When opening, closes all other
+                        windows so the feed is the only one (modified buffers
+                        are hidden, not lost). Use :HrOpen to keep them.
+:HrOpen                 Open the sidebar (focus it if already open). Leaves
+                        existing windows untouched.
 :HrClose                Close the sidebar.
 :HrStart                Open panel only; close the initial empty [No Name]
                         window if present. Entry point for the `hr` CLI.

@@ -47,8 +47,8 @@ Then `:helptags ALL` (or `:Helptags`) once to index the docs.
 
 | Command | Action |
 | --- | --- |
-| `:Hr` / `:HrToggle` | toggle the sidebar |
-| `:HrOpen` / `:HrClose` | open / close |
+| `:Hr` / `:HrToggle` | toggle the sidebar (on open, closes other windows — feed only) |
+| `:HrOpen` / `:HrClose` | open / close (leaves other windows untouched) |
 | `:HrStart` | panel only — entry point for the `hr` CLI |
 | `:HrRefresh` | re-fetch the list |
 | `:HrSync` | `hr sync` then refresh |

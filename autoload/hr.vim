@@ -268,6 +268,15 @@ function! hr#toggle() abort
     call hr#close()
   else
     call hr#open()
+    " Close every other window, leaving the feed as the only one. The bang
+    " hides modified buffers instead of refusing (no buffer content is lost).
+    if s:is_open()
+      call win_gotoid(s:state.winid)
+      silent! only!
+      " Now the sole window, the panel no longer has a sibling to open
+      " articles into; clear the stale target so s:open_current() makes one.
+      let s:state.prev_winid = -1
+    endif
   endif
 endfunction
 
