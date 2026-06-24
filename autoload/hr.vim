@@ -51,9 +51,10 @@ function! s:base_cmd() abort
 endfunction
 
 " Returns [ok, output]. Shows an error and returns [0, ''] on non-zero exit.
-function! s:run(args) abort
+" When a:input is given (non-empty string), it is fed to the CLI on stdin.
+function! s:run(args, ...) abort
   let l:cmd = join(map(s:base_cmd() + a:args, 'shellescape(v:val)'), ' ')
-  let l:out = system(l:cmd)
+  let l:out = (a:0 >= 1) ? system(l:cmd, a:1) : system(l:cmd)
   if v:shell_error != 0
     echohl ErrorMsg
     echomsg 'hr: ' . substitute(l:out, '\n', ' ', 'g')
@@ -162,6 +163,7 @@ function! s:open_current() abort
   " (signcolumn=no, winfixwidth, cursorline); restore normal-file defaults so
   " the git gutter shows and the article window can be resized.
   setlocal signcolumn=yes nowinfixwidth nocursorline
+  call s:setup_article_keymaps()
   let s:state.prev_winid = win_getid()
 endfunction
 
@@ -219,6 +221,107 @@ function! s:setup_keymaps() abort
   nnoremap <buffer><silent><nowait> s    :call <SID>sync_then_redraw()<CR>
   nnoremap <buffer><silent><nowait> q    :call hr#close()<CR>
   nnoremap <buffer><silent><nowait> ?    :call <SID>show_help()<CR>
+endfunction
+
+" ── corruption marking (used inside an opened article) ──────
+"
+" These operate on the article in the *current* window, not the panel:
+" the user selects the garbled text and marks it, so an LLM can repair it
+" later via `hr corrupt list --all --json` / `hr corrupt restore`.
+
+" The exclusive 0-based end byte column for a selection ending at the
+" 1-based byte column a:col on line a:lnum. With the default inclusive
+" 'selection', '> points at the last selected char, so we step past it
+" (rune-aware); 'exclusive' already points one past, so col-1 is the end.
+function! s:excl_endcol(lnum, col) abort
+  if &selection ==# 'exclusive'
+    return a:col - 1
+  endif
+  let l:line = getline(a:lnum)
+  if a:col - 1 >= strlen(l:line)
+    return strlen(l:line)
+  endif
+  let l:ch = matchstr(l:line, '.', a:col - 1)
+  return (a:col - 1) + max([1, strlen(l:ch)])
+endfunction
+
+" The text of the last visual selection, leaving registers and cursor
+" untouched. This is the source of truth the binary cross-checks the
+" --range against (mismatched ranges are rejected, not silently stored).
+function! s:visual_text() abort
+  let l:save_reg  = getreg('"')
+  let l:save_type = getregtype('"')
+  let l:save_pos  = getcurpos()
+  silent normal! gvy
+  let l:text = getreg('"')
+  call setreg('"', l:save_reg, l:save_type)
+  call setpos('.', l:save_pos)
+  return l:text
+endfunction
+
+function! s:article_path() abort
+  if &buftype !=# '' || empty(expand('%'))
+    echohl WarningMsg
+    echomsg 'hr: not a saved article buffer'
+    echohl NONE
+    return ''
+  endif
+  return expand('%:p')
+endfunction
+
+" Mark the current visual selection corrupted. Optional argument is a note.
+function! hr#corrupt(...) abort
+  let l:path = s:article_path()
+  if empty(l:path)
+    return
+  endif
+
+  let [l:_b1, l:l1, l:c1, l:_o1] = getpos("'<")
+  let [l:_b2, l:l2, l:c2, l:_o2] = getpos("'>")
+  if l:l1 == 0 || l:l2 == 0
+    echohl WarningMsg | echomsg 'hr: no visual selection' | echohl NONE
+    return
+  endif
+
+  " 1-based lines, 0-based byte columns, end exclusive — the hr contract.
+  let l:range = printf('%d:%d-%d:%d',
+        \ l:l1, l:c1 - 1, l:l2, s:excl_endcol(l:l2, l:c2))
+
+  let l:args = ['corrupt', l:path, '--range', l:range]
+  let l:note = (a:0 >= 1) ? a:1 : ''
+  if !empty(l:note)
+    call extend(l:args, ['--note', l:note])
+  endif
+
+  let [l:ok, l:out] = s:run(l:args, s:visual_text())
+  if l:ok
+    echo substitute(l:out, '\n\+$', '', '')
+  endif
+endfunction
+
+" Undo the most recent corruption mark on the current article.
+function! hr#corrupt_undo() abort
+  let l:path = s:article_path()
+  if empty(l:path)
+    return
+  endif
+  let [l:ok, l:out] = s:run(['corrupt', 'undo', l:path])
+  if l:ok
+    echo substitute(l:out, '\n\+$', '', '')
+  endif
+endfunction
+
+" Install the buffer-local corruption mappings on an article opened from
+" the panel (no-op when the user has turned defaults off). The <Plug>
+" targets exist regardless, so a custom config can map them anywhere.
+function! s:setup_article_keymaps() abort
+  if !get(g:, 'hr_corrupt_maps', 1)
+    return
+  endif
+  let l:p = get(g:, 'hr_corrupt_prefix', '<leader>c')
+  execute 'xnoremap <buffer><silent> ' . l:p . 'c <Plug>(HrCorrupt)'
+  execute 'xnoremap <buffer><silent> ' . l:p . 'n <Plug>(HrCorruptNote)'
+  execute 'nnoremap <buffer><silent> ' . l:p . 'u <Plug>(HrCorruptUndo)'
 endfunction
 
 " ── public API ─────────────────────────────────────────────

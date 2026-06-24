@@ -32,6 +32,15 @@ g:hr_width      Sidebar width in columns.               Default: 60
 g:hr_show_read  1 to include read items, 0 for unread only.
                                                         Default: 1
 
+                                                            *g:hr_corrupt_maps*
+g:hr_corrupt_maps   1 to install the buffer-local corruption-marking keys on
+                    articles opened from the panel, 0 to bind them yourself
+                    via the <Plug> maps below.           Default: 1
+
+                                                          *g:hr_corrupt_prefix*
+g:hr_corrupt_prefix Key prefix for those buffer-local maps.
+                                                        Default: "<leader>n"
+
 ==============================================================================
 COMMANDS                                                        *hr-commands*
 
@@ -45,6 +54,36 @@ COMMANDS                                                        *hr-commands*
                         window if present. Entry point for the `hr` CLI.
 :HrRefresh              Re-fetch and redraw the list.
 :HrSync                 Run `hr sync`, then refresh.
+
+                                                            *hr-corrupt-commands*
+Run these from within an opened article (any saved .md buffer):
+
+:[range]HrCorrupt [note]  Mark the selected region as corrupted (an LLM can
+                        repair it later via `hr corrupt restore`). Use it from
+                        a visual selection — `:'<,'>HrCorrupt OCR garble`. The
+                        exact selection is sent to the CLI, which rejects the
+                        mark if it doesn't match the computed byte range.
+:HrCorruptUndo          Remove the most recent corruption mark on the article.
+
+==============================================================================
+CORRUPTION MARKING                                              *hr-corrupt*
+
+Select garbled text in an article and mark it so tooling can restore it from
+the stored quote + surrounding context. Marks live in the article's sidecar;
+`hr corrupt list --all --json` is the unified report a repair tool consumes.
+
+Buffer-local keys on articles opened from the panel (see |g:hr_corrupt_maps|,
+|g:hr_corrupt_prefix|; shown with the default "<leader>n" prefix):
+
+  <leader>nc   (visual) mark the selection corrupted
+  <leader>nn   (visual) mark the selection, prompting for a note
+  <leader>nu   (normal) undo the most recent mark
+
+To bind your own keys, map the <Plug> targets (available everywhere): >
+    xmap <leader>x  <Plug>(HrCorrupt)
+    xmap <leader>X  <Plug>(HrCorruptNote)
+    nmap <leader>xu <Plug>(HrCorruptUndo)
+<
 
 ==============================================================================
 SIDEBAR KEYS                                                    *hr-keys*
