@@ -186,6 +186,18 @@ function! s:act(cmd) abort
   call s:redraw()
 endfunction
 
+" Flip the read state of the item under the cursor (read if unread, and
+" vice versa), driven by the state already in s:state.items.
+function! s:toggle_read() abort
+  let l:it = s:current_item()
+  if empty(l:it)
+    return
+  endif
+  let l:cmd = s:truthy(get(l:it, 'read', 0)) ? 'unread' : 'read'
+  call s:run([l:cmd, get(l:it, 'path', '')])
+  call s:redraw()
+endfunction
+
 function! s:rename_current() abort
   let l:it = s:current_item()
   if empty(l:it)
@@ -209,7 +221,7 @@ function! s:show_help() abort
   echo join([
         \ 'hr keys:',
         \ '  <CR>/o  open article',
-        \ '  r       mark read',
+        \ '  r       toggle read',
         \ '  u       mark unread',
         \ '  f       toggle favorite',
         \ '  a       set alias (rename label)',
@@ -223,7 +235,7 @@ endfunction
 function! s:setup_keymaps() abort
   nnoremap <buffer><silent><nowait> <CR> :call <SID>open_current()<CR>
   nnoremap <buffer><silent><nowait> o    :call <SID>open_current()<CR>
-  nnoremap <buffer><silent><nowait> r    :call <SID>act('read')<CR>
+  nnoremap <buffer><silent><nowait> r    :call <SID>toggle_read()<CR>
   nnoremap <buffer><silent><nowait> u    :call <SID>act('unread')<CR>
   nnoremap <buffer><silent><nowait> f    :call <SID>act('fav')<CR>
   nnoremap <buffer><silent><nowait> a    :call <SID>rename_current()<CR>

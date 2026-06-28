@@ -58,7 +58,8 @@ Keys inside the sidebar:
 | Key | Action |
 | --- | --- |
 | `<CR>`, `o` | open article |
-| `r` / `u` | mark read / unread |
+| `r` | toggle read / unread |
+| `u` | mark unread |
 | `f` | toggle favorite |
 | `a` | set alias (rename label) |
 | `R` / `s` | refresh / sync + refresh |

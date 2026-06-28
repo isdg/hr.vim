@@ -91,7 +91,7 @@ SIDEBAR KEYS                                                    *hr-keys*
 Active only inside the sidebar buffer:
 
   <CR>, o     open the article under the cursor
-  r           mark read
+  r           toggle read / unread
   u           mark unread
   f           toggle favorite
   a           set alias (rename the displayed label)
