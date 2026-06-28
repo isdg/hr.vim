@@ -112,6 +112,12 @@ function! s:redraw() abort
   if !s:is_open()
     return
   endif
+  " Rebuilding the buffer (delete-all + re-add) snaps the cursor back to
+  " line 1, which reads as the item you just acted on jumping to the top
+  " of the feed. Preserve the panel's view across the rewrite.
+  let l:onpanel = win_getid() == s:state.winid
+  let l:view = l:onpanel ? winsaveview() : {}
+
   let s:state.items = s:fetch_items()
   let l:lines = s:render(s:state.items)
   if empty(l:lines)
@@ -121,6 +127,10 @@ function! s:redraw() abort
   silent call deletebufline(s:state.bufnr, 1, '$')
   call setbufline(s:state.bufnr, 1, l:lines)
   call setbufvar(s:state.bufnr, '&modifiable', 0)
+
+  if l:onpanel
+    call winrestview(l:view)
+  endif
 endfunction
 
 " The item under the cursor. Mappings run with the panel as the current
