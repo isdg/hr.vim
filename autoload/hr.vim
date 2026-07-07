@@ -333,14 +333,39 @@ function! hr#corrupt_undo() abort
   endif
 endfunction
 
-" Move the cursor to the current article's row in the feed panel, opening
-" the panel if it is closed. Run from inside an opened article, this lets
-" you manage (read/fav/alias) the piece you are reading without hunting for
-" it in the list. Paths are compared canonically so symlinks and relative
-" CLI paths still match the buffer's absolute path.
+" 1-based row of the item whose path matches a:target (a canonical absolute
+" path), or 0 when none does. Paths are compared canonically so symlinks and
+" relative CLI paths still match a buffer's absolute path.
+function! s:row_of(items, target) abort
+  let l:i = 0
+  for l:it in a:items
+    let l:i += 1
+    if resolve(fnamemodify(get(l:it, 'path', ''), ':p')) ==# a:target
+      return l:i
+    endif
+  endfor
+  return 0
+endfunction
+
+" Locate the current article in the feed. Run from any saved article buffer:
+" if the file belongs to the feed, open the panel (when closed) and put the
+" cursor on its row so you can manage it there; if it does not, do nothing.
 function! hr#locate() abort
   let l:path = s:article_path()
   if empty(l:path)
+    return
+  endif
+  let l:target = resolve(fnamemodify(l:path, ':p'))
+
+  " Check membership before touching windows, so a non-feed file never
+  " spawns a panel. Use the live list when the panel is open, else a fresh
+  " fetch. Either honours g:hr_show_read, so a read article hidden by an
+  " unread-only view counts as absent.
+  let l:items = s:is_open() ? s:state.items : s:fetch_items()
+  if s:row_of(l:items, l:target) == 0
+    echohl WarningMsg
+    echomsg 'hr: article not in the current feed'
+    echohl NONE
     return
   endif
 
@@ -351,24 +376,11 @@ function! hr#locate() abort
     return
   endif
 
-  let l:target = resolve(fnamemodify(l:path, ':p'))
-  let l:row = 0
-  let l:i = 0
-  for l:it in s:state.items
-    let l:i += 1
-    if resolve(fnamemodify(get(l:it, 'path', ''), ':p')) ==# l:target
-      let l:row = l:i
-      break
-    endif
-  endfor
-
+  " hr#open refetched into s:state.items; recompute against what is rendered.
+  let l:row = s:row_of(s:state.items, l:target)
   if l:row == 0
-    echohl WarningMsg
-    echomsg 'hr: article not in the current feed'
-    echohl NONE
     return
   endif
-
   call win_gotoid(s:state.winid)
   call cursor(l:row, 1)
 endfunction
@@ -384,7 +396,6 @@ function! s:setup_article_keymaps() abort
   execute 'xnoremap <buffer><silent> ' . l:p . 'c <Plug>(HrCorrupt)'
   execute 'xnoremap <buffer><silent> ' . l:p . 'n <Plug>(HrCorruptNote)'
   execute 'nnoremap <buffer><silent> ' . l:p . 'u <Plug>(HrCorruptUndo)'
-  execute 'nnoremap <buffer><silent> ' . l:p . 'f <Plug>(HrLocate)'
 endfunction
 
 " ── public API ─────────────────────────────────────────────

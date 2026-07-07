@@ -81,27 +81,28 @@ Buffer-local keys on articles opened from the panel (see |g:hr_corrupt_maps|,
   <leader>nc   (visual) mark the selection corrupted
   <leader>nn   (visual) mark the selection, prompting for a note
   <leader>nu   (normal) undo the most recent mark
-  <leader>nf   (normal) locate this article in the feed (see |hr-locate|)
 
 To bind your own keys, map the <Plug> targets (available everywhere): >
     xmap <leader>x  <Plug>(HrCorrupt)
     xmap <leader>X  <Plug>(HrCorruptNote)
     nmap <leader>xu <Plug>(HrCorruptUndo)
-    nmap <leader>xf <Plug>(HrLocate)
 <
 
 ==============================================================================
 LOCATE IN FEED                                                  *hr-locate*
 
-From inside an opened article, `<leader>nf` (or |:HrLocate|, or the
-<Plug>(HrLocate) target) moves the cursor to that article's row in the feed
-panel, opening the panel if it is closed. Use it to manage the piece you are
-reading — mark it read, favorite it, or alias it — without scrolling the list
-to find it.
+From any saved article buffer — however it was opened — |:HrLocate| (or the
+<Plug>(HrLocate) target) checks whether the file belongs to the feed. If it
+does, the panel is opened (when closed) and the cursor jumps to the article's
+row, so you can manage it there — mark read, favorite, alias — without
+scrolling to find it. If it does not, nothing happens beyond a message; no
+panel is opened. Membership is checked before any window is touched.
 
-If the article is not in the current feed (for example it is read while
-|g:hr_show_read| is 0, so the list is filtered to unread only), a message says
-so and the cursor stays put.
+No key is bound by default; bind the <Plug> target yourself, e.g.: >
+    nmap <leader>nf <Plug>(HrLocate)
+<
+An article that is read while |g:hr_show_read| is 0 counts as absent, since
+the unread-only list does not contain it.
 
 ==============================================================================
 SIDEBAR KEYS                                                    *hr-keys*
