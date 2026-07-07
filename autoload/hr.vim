@@ -351,9 +351,11 @@ function! s:row_of(items, target) abort
 endfunction
 
 " Locate the current article in the feed. Run from any saved article buffer:
-" if the file belongs to the feed, open the panel (when closed) and put the
-" cursor on its row so you can manage it there; if it does not, do nothing.
+" if the file belongs to the feed, close the article window, open the panel
+" (when closed) and put the cursor on its row so you can manage it there; if
+" it does not, do nothing.
 function! hr#locate() abort
+  let l:src = win_getid()
   let l:path = s:article_path()
   if empty(l:path)
     return
@@ -395,6 +397,14 @@ function! hr#locate() abort
   endif
   call win_gotoid(s:state.winid)
   call cursor(l:row, 1)
+
+  " Close the window the article was in, leaving the feed. Skip it when that
+  " window is the panel itself or has already gone (e.g. hr#open reused it).
+  if l:src != s:state.winid && win_id2win(l:src) != 0 && winnr('$') > 1
+    call win_gotoid(l:src)
+    close
+    call win_gotoid(s:state.winid)
+  endif
 endfunction
 
 " Install the buffer-local corruption mappings on an article opened from

@@ -64,9 +64,9 @@ Run these from within an opened article (any saved .md buffer):
                         exact selection is sent to the CLI, which rejects the
                         mark if it doesn't match the computed byte range.
 :HrCorruptUndo          Remove the most recent corruption mark on the article.
-:HrLocate               Jump the cursor to this article's row in the feed
-                        panel (opening the panel if closed), so you can act on
-                        it there. See |hr-locate|.
+:HrLocate               Close this article's window and jump the cursor to its
+                        row in the feed panel (opening the panel if closed), so
+                        you can act on it there. See |hr-locate|.
 
 ==============================================================================
 CORRUPTION MARKING                                              *hr-corrupt*
@@ -93,10 +93,11 @@ LOCATE IN FEED                                                  *hr-locate*
 
 From any saved article buffer — however it was opened — |:HrLocate| (or the
 <Plug>(HrLocate) target) checks whether the file belongs to the feed. If it
-does, the panel is opened (when closed) and the cursor jumps to the article's
-row, so you can manage it there — mark read, favorite, alias — without
-scrolling to find it. If it does not, nothing happens beyond a message; no
-panel is opened. Membership is checked before any window is touched.
+does, the article's window is closed, the panel is opened (when closed) and
+the cursor jumps to the article's row, so you can manage it there — mark read,
+favorite, alias — without scrolling to find it. If it does not, nothing
+happens beyond a message; no window is closed and no panel is opened.
+Membership is checked before any window is touched.
 
 No key is bound by default; bind the <Plug> target yourself, e.g.: >
     nmap <leader>nf <Plug>(HrLocate)
