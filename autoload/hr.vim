@@ -333,6 +333,46 @@ function! hr#corrupt_undo() abort
   endif
 endfunction
 
+" Move the cursor to the current article's row in the feed panel, opening
+" the panel if it is closed. Run from inside an opened article, this lets
+" you manage (read/fav/alias) the piece you are reading without hunting for
+" it in the list. Paths are compared canonically so symlinks and relative
+" CLI paths still match the buffer's absolute path.
+function! hr#locate() abort
+  let l:path = s:article_path()
+  if empty(l:path)
+    return
+  endif
+
+  if !s:is_open()
+    call hr#open()
+  endif
+  if !s:is_open()
+    return
+  endif
+
+  let l:target = resolve(fnamemodify(l:path, ':p'))
+  let l:row = 0
+  let l:i = 0
+  for l:it in s:state.items
+    let l:i += 1
+    if resolve(fnamemodify(get(l:it, 'path', ''), ':p')) ==# l:target
+      let l:row = l:i
+      break
+    endif
+  endfor
+
+  if l:row == 0
+    echohl WarningMsg
+    echomsg 'hr: article not in the current feed'
+    echohl NONE
+    return
+  endif
+
+  call win_gotoid(s:state.winid)
+  call cursor(l:row, 1)
+endfunction
+
 " Install the buffer-local corruption mappings on an article opened from
 " the panel (no-op when the user has turned defaults off). The <Plug>
 " targets exist regardless, so a custom config can map them anywhere.
@@ -344,6 +384,7 @@ function! s:setup_article_keymaps() abort
   execute 'xnoremap <buffer><silent> ' . l:p . 'c <Plug>(HrCorrupt)'
   execute 'xnoremap <buffer><silent> ' . l:p . 'n <Plug>(HrCorruptNote)'
   execute 'nnoremap <buffer><silent> ' . l:p . 'u <Plug>(HrCorruptUndo)'
+  execute 'nnoremap <buffer><silent> ' . l:p . 'f <Plug>(HrLocate)'
 endfunction
 
 " ── public API ─────────────────────────────────────────────

@@ -48,8 +48,12 @@ command! -bar -nargs=0 HrSync    call hr#sync()
 command! -bar -range -nargs=? HrCorrupt     call hr#corrupt(<q-args>)
 command! -bar          -nargs=0 HrCorruptUndo call hr#corrupt_undo()
 
+" Jump from an opened article to its row in the feed panel.
+command! -bar -nargs=0 HrLocate call hr#locate()
+
 " <Plug> targets so a config can bind its own keys (the buffer-local
 " defaults installed on opened articles point at these).
 xnoremap <silent> <Plug>(HrCorrupt)     :<C-u>call hr#corrupt('')<CR>
 xnoremap <silent> <Plug>(HrCorruptNote) :<C-u>call hr#corrupt(input('corruption note: '))<CR>
 nnoremap <silent> <Plug>(HrCorruptUndo) :<C-u>call hr#corrupt_undo()<CR>
+nnoremap <silent> <Plug>(HrLocate)      :<C-u>call hr#locate()<CR>
