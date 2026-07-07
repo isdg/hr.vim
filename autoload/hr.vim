@@ -64,9 +64,12 @@ function! s:run(args, ...) abort
   return [1, l:out]
 endfunction
 
-function! s:fetch_items() abort
+" With a:1 truthy, ignore g:hr_show_read and return every article — used by
+" locate, so a read item hidden by an unread-only view is still findable.
+function! s:fetch_items(...) abort
+  let l:all = a:0 >= 1 && a:1
   let l:args = ['list', '--json']
-  if !s:truthy(g:hr_show_read)
+  if !l:all && !s:truthy(g:hr_show_read)
     call add(l:args, '--unread')
   endif
   let [l:ok, l:out] = s:run(l:args)
@@ -357,26 +360,35 @@ function! hr#locate() abort
   endif
   let l:target = resolve(fnamemodify(l:path, ':p'))
 
-  " Check membership before touching windows, so a non-feed file never
-  " spawns a panel. Use the live list when the panel is open, else a fresh
-  " fetch. Either honours g:hr_show_read, so a read article hidden by an
-  " unread-only view counts as absent.
-  let l:items = s:is_open() ? s:state.items : s:fetch_items()
-  if s:row_of(l:items, l:target) == 0
+  " Membership is checked before touching windows (so a non-feed file never
+  " spawns a panel) and against the *unfiltered* list, so a read article is
+  " found even under an unread-only view.
+  let l:all = s:fetch_items(1)
+  let l:idx = s:row_of(l:all, l:target)
+  if l:idx == 0
     echohl WarningMsg
-    echomsg 'hr: article not in the current feed'
+    echomsg 'hr: article not in the feed'
     echohl NONE
     return
   endif
 
+  " The cursor can only land on a rendered row, so if this article is read
+  " and the panel is unread-only, switch to showing read items — otherwise
+  " its row would not exist. This changes g:hr_show_read for the session.
+  if !s:truthy(g:hr_show_read) && s:truthy(get(l:all[l:idx - 1], 'read', 0))
+    let g:hr_show_read = 1
+  endif
+
   if !s:is_open()
     call hr#open()
+  else
+    call s:redraw()
   endif
   if !s:is_open()
     return
   endif
 
-  " hr#open refetched into s:state.items; recompute against what is rendered.
+  " Recompute against what the panel actually rendered.
   let l:row = s:row_of(s:state.items, l:target)
   if l:row == 0
     return

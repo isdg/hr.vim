@@ -101,8 +101,10 @@ panel is opened. Membership is checked before any window is touched.
 No key is bound by default; bind the <Plug> target yourself, e.g.: >
     nmap <leader>nf <Plug>(HrLocate)
 <
-An article that is read while |g:hr_show_read| is 0 counts as absent, since
-the unread-only list does not contain it.
+Membership is checked against the full list, so a read article is found even
+under an unread-only view (|g:hr_show_read| is 0). Locating a read one in that
+case turns |g:hr_show_read| on for the session, since the cursor can only land
+on a row the panel actually renders.
 
 ==============================================================================
 SIDEBAR KEYS                                                    *hr-keys*
