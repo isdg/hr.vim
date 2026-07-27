@@ -52,6 +52,27 @@ Then `:helptags ALL` (or `:Helptags`) once to index the docs.
 | `:HrStart` | panel only — entry point for the `hr` CLI |
 | `:HrRefresh` | re-fetch the list |
 | `:HrSync` | `hr sync` then refresh |
+| `:HrFilter [flags]` | scope the panel; no args reports, `-` clears |
+
+`:Hr`, `:HrToggle`, `:HrOpen` and `:HrStart` also take optional `hr list`
+flags that scope the panel:
+
+```vim
+:Hr --group books                  " one shelf
+:HrStart --feed matklad,danluu     " one or more authors
+:HrFilter --group sites --unread   " flags compose
+:HrFilter -                        " drop the scope
+```
+
+The plugin doesn't interpret them — it appends them to `hr list --json`, so
+the CLI stays the only authority on what a flag means and nothing here needs
+changing when `hr` grows a new one. A scoped panel shows the filter in its
+buffer name (`hr://reading-list --group books`) so a narrow view can't be
+mistaken for an empty vault.
+
+From the shell, the `hrv` function (in isg's dotfiles, `zsh/fzf.zsh`) is a
+thin wrapper over this: `hrv --group books` validates the flags against the
+CLI, then launches `nvim -c "HrStart --group books"`.
 
 Keys inside the sidebar:
 
@@ -75,6 +96,7 @@ Keys inside the sidebar:
 | `g:hr_side` | `"left"` | sidebar side (`left`/`right`) |
 | `g:hr_width` | `60` | sidebar width in columns |
 | `g:hr_show_read` | `1` | `1` = include read items, `0` = unread only |
+| `g:hr_filter` | `[]` | extra `hr list` flags scoping the panel |
 
 ```lua
 -- Neovim

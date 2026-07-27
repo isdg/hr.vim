@@ -10,6 +10,7 @@
 "   g:hr_side       "left" | "right"         (default "left")
 "   g:hr_width      sidebar columns          (default 60)
 "   g:hr_show_read  1 = include read items   (default 1)
+"   g:hr_filter     extra `hr list` flags    (default [])
 "
 " Commands:
 "   :Hr / :HrToggle   toggle the sidebar
@@ -17,6 +18,12 @@
 "   :HrStart          open panel only (entry point for the `hr` CLI)
 "   :HrRefresh        re-fetch the list
 "   :HrSync           sync feeds + refresh
+"   :HrFilter         set/report the flags scoping the panel
+"
+" :Hr, :HrToggle, :HrOpen and :HrStart take optional `hr list` flags that
+" scope the panel, e.g. `:Hr --group books` or `:HrStart --feed matklad
+" --unread`. hr owns the vocabulary; the plugin only forwards, so any flag
+" `hr list` accepts works. `:HrFilter -` clears the scope.
 
 if exists('g:loaded_hr')
   finish
@@ -28,19 +35,25 @@ let g:hr_vault        = get(g:, 'hr_vault', '')
 let g:hr_side         = get(g:, 'hr_side', 'left')
 let g:hr_width        = get(g:, 'hr_width', 60)
 let g:hr_show_read    = get(g:, 'hr_show_read', 1)
+" Extra `hr list` flags scoping the panel: a list (['--group','books']) or a
+" whitespace-separated string ('--group books').
+let g:hr_filter       = get(g:, 'hr_filter', [])
 " Corruption marking inside opened articles:
 "   g:hr_corrupt_maps    1 = install buffer-local maps (default 1)
 "   g:hr_corrupt_prefix  key prefix for those maps    (default "<leader>n")
 let g:hr_corrupt_maps   = get(g:, 'hr_corrupt_maps', 1)
 let g:hr_corrupt_prefix = get(g:, 'hr_corrupt_prefix', '<leader>n')
 
-command! -bar -nargs=0 Hr        call hr#toggle()
-command! -bar -nargs=0 HrToggle  call hr#toggle()
-command! -bar -nargs=0 HrOpen    call hr#open()
+" The four openers take optional `hr list` flags; passing none leaves the
+" current filter alone, so <leader>Hr keeps toggling the view you set up.
+command! -bar -nargs=* Hr        call hr#toggle(<q-args>)
+command! -bar -nargs=* HrToggle  call hr#toggle(<q-args>)
+command! -bar -nargs=* HrOpen    call hr#open(<q-args>)
 command! -bar -nargs=0 HrClose   call hr#close()
-command! -bar -nargs=0 HrStart   call hr#start()
+command! -bar -nargs=* HrStart   call hr#start(<q-args>)
 command! -bar -nargs=0 HrRefresh call hr#refresh()
 command! -bar -nargs=0 HrSync    call hr#sync()
+command! -bar -nargs=* HrFilter  call hr#filter(<q-args>)
 
 " Corruption marking — usable in any saved article buffer. :HrCorrupt is
 " range-aware, so it works straight from a visual selection (:'<,'>HrCorrupt)

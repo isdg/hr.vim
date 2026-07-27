@@ -64,13 +64,53 @@ function! s:run(args, ...) abort
   return [1, l:out]
 endfunction
 
-" With a:1 truthy, ignore g:hr_show_read and return every article — used by
-" locate, so a read item hidden by an unread-only view is still findable.
+" ── filter ─────────────────────────────────────────────────
+" g:hr_filter holds extra `hr list` flags scoping the panel, e.g.
+" ['--group', 'books'] or the string '--group books'. Set it directly, or
+" pass flags to :Hr / :HrOpen / :HrStart / :HrFilter. hr owns the flag
+" vocabulary — the plugin just forwards, so anything `hr list` accepts
+" (--group, --feed, --tag, --since, --corrupted, ...) works here with no
+" change on this side.
+
+" The filter as a list of arguments, accepting either a list or a
+" whitespace-separated string in g:hr_filter.
+function! s:filter_args() abort
+  let l:f = get(g:, 'hr_filter', [])
+  if type(l:f) == v:t_string
+    return empty(l:f) ? [] : split(l:f)
+  endif
+  return type(l:f) == v:t_list ? copy(l:f) : []
+endfunction
+
+function! s:filter_label() abort
+  return join(s:filter_args(), ' ')
+endfunction
+
+" Normalize a command's <q-args> into a filter. Returns [changed, args]:
+" no arguments means "leave the current filter alone", so a bare :Hr keeps
+" toggling whatever view you set up, while a lone '-' or 'clear' empties it.
+function! s:filter_from_args(args) abort
+  let l:parts = (type(a:args) == v:t_list) ? copy(a:args) : split(a:args)
+  if empty(l:parts)
+    return [0, []]
+  endif
+  if len(l:parts) == 1 && (l:parts[0] ==# '-' || l:parts[0] ==# 'clear')
+    return [1, []]
+  endif
+  return [1, l:parts]
+endfunction
+
+" With a:1 truthy, ignore g:hr_show_read *and* the filter, returning every
+" article — used by locate, so an item hidden by an unread-only or scoped
+" view is still findable.
 function! s:fetch_items(...) abort
   let l:all = a:0 >= 1 && a:1
   let l:args = ['list', '--json']
   if !l:all && !s:truthy(g:hr_show_read)
     call add(l:args, '--unread')
+  endif
+  if !l:all
+    call extend(l:args, s:filter_args())
   endif
   let [l:ok, l:out] = s:run(l:args)
   if !l:ok || empty(l:out)
@@ -109,6 +149,22 @@ function! s:render(items) abort
           \ l:r, l:fav, l:date, l:feed, l:label))
   endfor
   return l:lines
+endfunction
+
+" The panel's buffer name carries the active filter, so a scoped view is
+" visible wherever the buffer name is (statusline, :ls) instead of looking
+" like a vault that lost most of its articles. It can't go in the buffer
+" itself: s:current_item() maps line('.') to items[row-1], so a header line
+" would shift every row off its item.
+function! s:name_panel() abort
+  let l:label = s:filter_label()
+  let l:name = 'hr://reading-list'
+  if !empty(l:label)
+    let l:name .= ' ' . l:label
+  endif
+  if bufname('%') !=# l:name
+    execute 'silent! keepalt file ' . fnameescape(l:name)
+  endif
 endfunction
 
 function! s:redraw() abort
@@ -392,6 +448,23 @@ function! hr#locate() abort
 
   " Recompute against what the panel actually rendered.
   let l:row = s:row_of(s:state.items, l:target)
+
+  " The article is in the vault (checked above) but not in the scoped view,
+  " so it has no row to land on. Drop the filter for the session — the same
+  " trade the g:hr_show_read flip above makes, and it keeps hr itself the
+  " only thing that decides what a filter matches.
+  if l:row == 0 && !empty(s:filter_args())
+    let l:dropped = s:filter_label()
+    let g:hr_filter = []
+    call s:apply_filter()
+    let l:row = s:row_of(s:state.items, l:target)
+    if l:row > 0
+      echohl WarningMsg
+      echomsg 'hr: cleared filter ' . l:dropped . ' to reveal this article'
+      echohl NONE
+    endif
+  endif
+
   if l:row == 0
     return
   endif
@@ -422,8 +495,16 @@ endfunction
 
 " ── public API ─────────────────────────────────────────────
 
-function! hr#open() abort
+" a:1, when given, is a filter spec (see s:filter_from_args).
+function! hr#open(...) abort
+  let [l:changed, l:parts] = s:filter_from_args(a:0 >= 1 ? a:1 : '')
+  if l:changed
+    let g:hr_filter = l:parts
+  endif
   if s:is_open()
+    if l:changed
+      call s:apply_filter()
+    endif
     call win_gotoid(s:state.winid)
     return
   endif
@@ -441,7 +522,7 @@ function! hr#open() abort
 
   setlocal buftype=nofile bufhidden=wipe noswapfile
   setlocal filetype=hr
-  silent! keepalt file hr://reading-list
+  call s:name_panel()
   setlocal number norelativenumber nowrap signcolumn=no cursorline winfixwidth
 
   call s:setup_keymaps()
@@ -462,11 +543,21 @@ function! hr#close() abort
   let s:state.items = []
 endfunction
 
-function! hr#toggle() abort
+function! hr#toggle(...) abort
+  let l:spec = a:0 >= 1 ? a:1 : ''
+  let [l:changed, l:parts] = s:filter_from_args(l:spec)
+  " Given flags, retarget an open panel instead of closing it: `:Hr --group
+  " books` should show books, not toggle the sidebar away.
+  if l:changed && s:is_open()
+    let g:hr_filter = l:parts
+    call s:apply_filter()
+    call win_gotoid(s:state.winid)
+    return
+  endif
   if s:is_open()
     call hr#close()
   else
-    call hr#open()
+    call hr#open(l:spec)
     " Close every other window, leaving the feed as the only one. The bang
     " hides modified buffers instead of refusing (no buffer content is lost).
     if s:is_open()
@@ -483,14 +574,43 @@ function! hr#refresh() abort
   call s:redraw()
 endfunction
 
+" Set (or with no arguments report) the flags scoping the panel. A single
+" bare '-' or 'clear' empties the filter. Applies immediately when the panel
+" is open; otherwise the next open picks it up.
+function! hr#filter(args) abort
+  let [l:changed, l:parts] = s:filter_from_args(a:args)
+  if !l:changed
+    let l:label = s:filter_label()
+    echomsg empty(l:label) ? 'hr: no filter' : 'hr: filter ' . l:label
+    return
+  endif
+  let g:hr_filter = l:parts
+  call s:apply_filter()
+endfunction
+
+" Re-render the open panel under the current filter, renaming it so the
+" scope stays visible. The rename needs the panel to be the current buffer.
+function! s:apply_filter() abort
+  if !s:is_open()
+    return
+  endif
+  let l:cur = win_getid()
+  call win_gotoid(s:state.winid)
+  call s:name_panel()
+  call s:redraw()
+  if l:cur != s:state.winid && win_id2win(l:cur) != 0
+    call win_gotoid(l:cur)
+  endif
+endfunction
+
 function! hr#sync() abort
   call s:sync_then_redraw()
 endfunction
 
 " Open the panel only, closing the initial empty [No Name] window if there
 " is one. Entry point for the `hr` CLI: panel, no placeholder, no auto-open.
-function! hr#start() abort
-  call hr#open()
+function! hr#start(...) abort
+  call hr#open(a:0 >= 1 ? a:1 : '')
 
   let l:prev = s:state.prev_winid
   if !(l:prev > 0 && l:prev != s:state.winid && win_id2win(l:prev) != 0)

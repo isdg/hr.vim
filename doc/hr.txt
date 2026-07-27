@@ -32,6 +32,14 @@ g:hr_width      Sidebar width in columns.               Default: 60
 g:hr_show_read  1 to include read items, 0 for unread only.
                                                         Default: 1
 
+                                                                *g:hr_filter*
+g:hr_filter     Extra `hr list` flags scoping the panel: a list
+                (['--group', 'books']) or a whitespace-separated string
+                ('--group books'). hr owns the flag vocabulary — the plugin
+                only forwards — so anything `hr list` accepts works, e.g.
+                --group, --feed, --tag, --since, --corrupted. See
+                |hr-filter|.                              Default: []
+
                                                             *g:hr_corrupt_maps*
 g:hr_corrupt_maps   1 to install the buffer-local corruption-marking keys on
                     articles opened from the panel, 0 to bind them yourself
@@ -40,6 +48,33 @@ g:hr_corrupt_maps   1 to install the buffer-local corruption-marking keys on
                                                           *g:hr_corrupt_prefix*
 g:hr_corrupt_prefix Key prefix for those buffer-local maps.
                                                         Default: "<leader>n"
+
+==============================================================================
+FILTER                                                            *hr-filter*
+
+The panel can be scoped to part of the vault by passing `hr list` flags,
+either as command arguments or via |g:hr_filter|: >
+
+    :Hr --group books                 one shelf
+    :HrStart --feed matklad,danluu    one or more authors
+    :HrFilter --group sites --unread  flags compose
+    :HrFilter -                       drop the scope
+    :let g:hr_filter = ['--group', 'humans']
+<
+The plugin does not interpret these flags; it appends them to `hr list
+--json`, so the CLI is the single authority on what they mean and no plugin
+change is needed when hr grows a new one. An unknown flag surfaces as an
+hr error message.
+
+A scoped panel shows the filter in its buffer name
+(`hr://reading-list --group books`), so a narrow view is distinguishable
+from a vault that lost its articles. The filter cannot be shown in the
+buffer itself, because each line maps positionally to an item.
+
+|:HrLocate| deliberately searches the *unscoped* vault. If the article it
+finds has no row in the scoped view, the filter is dropped for the session
+so the cursor has somewhere to land — the same trade |g:hr_show_read| makes
+for read items.
 
 ==============================================================================
 COMMANDS                                                        *hr-commands*
@@ -54,6 +89,15 @@ COMMANDS                                                        *hr-commands*
                         window if present. Entry point for the `hr` CLI.
 :HrRefresh              Re-fetch and redraw the list.
 :HrSync                 Run `hr sync`, then refresh.
+
+:Hr, :HrToggle, :HrOpen and :HrStart all accept optional `hr list` flags
+that scope the panel — `:Hr --group books`, `:HrStart --feed matklad
+--unread`. Passing none leaves the current scope alone, so a bare :Hr keeps
+toggling the view you set up. See |hr-filter|.
+
+:HrFilter [flags]       Set the flags scoping the panel, applying them at
+                        once when it is open. With no arguments, report the
+                        current filter; with a lone `-` or `clear`, drop it.
 
                                                             *hr-corrupt-commands*
 Run these from within an opened article (any saved .md buffer):
