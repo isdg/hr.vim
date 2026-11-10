@@ -6,7 +6,7 @@
 "
 " Configuration (set before the plugin loads, or any time):
 "   g:hr_binary     CLI name/path            (default "hr")
-"   g:hr_vault      vault dir; ""/unset      (default reads ~/.hrrc)
+"   g:hr_vault      vault dir; ""/unset      (default: hr's config)
 "   g:hr_side       "left" | "right"         (default "left")
 "   g:hr_width      sidebar columns          (default 60)
 "   g:hr_show_read  1 = include read items   (default 1)
