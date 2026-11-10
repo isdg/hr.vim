@@ -105,12 +105,16 @@ endfunction
 " view is still findable.
 function! s:fetch_items(...) abort
   let l:all = a:0 >= 1 && a:1
-  let l:args = ['list', '--json']
-  if !l:all && !s:truthy(g:hr_show_read)
-    call add(l:args, '--unread')
-  endif
-  if !l:all
-    call extend(l:args, s:filter_args())
+  let l:filter = l:all ? [] : s:filter_args()
+  if get(l:filter, 0, '') ==# 'recent'
+    " What you opened, read or not, so g:hr_show_read does not apply.
+    let l:args = ['recent', '--json'] + l:filter[1:]
+  else
+    let l:args = ['list', '--json']
+    if !l:all && !s:truthy(g:hr_show_read)
+      call add(l:args, '--unread')
+    endif
+    call extend(l:args, l:filter)
   endif
   let [l:ok, l:out] = s:run(l:args)
   if !l:ok || empty(l:out)
@@ -140,7 +144,11 @@ function! s:render(items) abort
   for l:it in a:items
     let l:r     = s:truthy(get(l:it, 'read', 0))     ? 'R' : ' '
     let l:fav   = s:truthy(get(l:it, 'favorite', 0)) ? 'F' : ' '
-    let l:date  = strpart(get(l:it, 'published', ''), 0, 10)
+    " The recent view shows when you opened an item, not when it appeared.
+    let l:opened = get(l:it, 'opened', '')
+    let l:date = empty(l:opened)
+          \ ? strpart(get(l:it, 'published', ''), 0, 10)
+          \ : strpart(l:opened, 0, 10) . ' ' . strpart(l:opened, 11, 5)
     let l:feed  = strpart(get(l:it, 'feed', ''), 0, l:feed_w)
     let l:alias = get(l:it, 'alias', '')
     let l:label = (type(l:alias) == v:t_string && l:alias !=# '')
@@ -493,7 +501,32 @@ function! s:setup_article_keymaps() abort
   execute 'nnoremap <buffer><silent> ' . l:p . 'u <Plug>(HrCorruptUndo)'
 endfunction
 
+" Run a command in the background, discarding its output.
+function! s:spawn(cmd) abort
+  if exists('*jobstart')
+    call jobstart(a:cmd)
+  elseif exists('*job_start')
+    call job_start(a:cmd,
+          \ {'in_io': 'null', 'out_io': 'null', 'err_io': 'null'})
+  endif
+endfunction
+
 " ── public API ─────────────────────────────────────────────
+
+" Record that the article at a:path was opened, for `hr recent`. Called on
+" every *.md load, so it bails cheaply on files outside a vault's feeds/;
+" hr finds the vault from the path itself, whatever the cwd.
+function! hr#track_open(path) abort
+  if !s:truthy(get(g:, 'hr_track_opens', 1)) || a:path !~# '/feeds/'
+    return
+  endif
+  let l:dir = escape(fnamemodify(a:path, ':h'), ' ,;\')
+  if empty(findfile('hr.toml', l:dir . ';'))
+    return
+  endif
+  call s:spawn([g:hr_binary, 'opened', a:path])
+endfunction
+
 
 " a:1, when given, is a filter spec (see s:filter_from_args).
 function! hr#open(...) abort

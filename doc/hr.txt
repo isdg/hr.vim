@@ -40,6 +40,11 @@ g:hr_filter     Extra `hr list` flags scoping the panel: a list
                 --group, --feed, --tag, --since, --corrupted. See
                 |hr-filter|.                              Default: []
 
+                                                            *g:hr_track_opens*
+g:hr_track_opens  1 to log every vault article loaded into a buffer with
+                `hr opened`, which is what `hr recent` lists. 0 stops it.
+                See |hr-recent|.                          Default: 1
+
                                                             *g:hr_corrupt_maps*
 g:hr_corrupt_maps   1 to install the buffer-local corruption-marking keys on
                     articles opened from the panel, 0 to bind them yourself
@@ -75,6 +80,24 @@ buffer itself, because each line maps positionally to an item.
 finds has no row in the scoped view, the filter is dropped for the session
 so the cursor has somewhere to land — the same trade |g:hr_show_read| makes
 for read items.
+
+==============================================================================
+RECENT                                                            *hr-recent*
+
+A leading `recent` switches the panel from `hr list` to `hr recent`: the
+articles you opened, most recently opened first, dated by the open. The
+other flags still scope it, and --since then means opened within: >
+
+    :Hr recent                        everything you opened
+    :HrStart recent --since 7d        this week's reading
+    :HrFilter recent --group humans   one shelf
+<
+Opens are logged by an autocmd on |BufReadPost| for *.md files under a
+vault's feeds/, running `hr opened` in the background. Loading a buffer is
+what counts: switching back to one already loaded does not, and |:edit!|
+does. The recent view ignores |g:hr_show_read|. Set |g:hr_track_opens| to 0
+to stop logging. With lazy-loading, load the plugin on BufReadPost *.md
+too, or opens made before the first :Hr command go unrecorded.
 
 ==============================================================================
 COMMANDS                                                        *hr-commands*

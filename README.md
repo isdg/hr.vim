@@ -87,6 +87,24 @@ Keys inside the sidebar:
 | `q` | close |
 | `?` | help |
 
+### Recent
+
+A leading `recent` lists what you opened instead, newest open first, via
+`hr recent` (the other flags still apply; `--since` means opened within):
+
+```vim
+:Hr recent
+:HrStart recent --since 7d
+```
+
+Opens are logged by a `BufReadPost *.md` autocmd that runs `hr opened` in
+the background for files under a vault's `feeds/`. When lazy-loading, add
+that event to the plugin spec so opens before the first `:Hr` count too:
+
+```lua
+{ "isdg/hr.vim", event = "BufReadPost *.md", cmd = { "Hr", "HrStart" } }
+```
+
 ## Configuration
 
 | Variable | Default | Meaning |
@@ -97,6 +115,7 @@ Keys inside the sidebar:
 | `g:hr_width` | `60` | sidebar width in columns |
 | `g:hr_show_read` | `1` | `1` = include read items, `0` = unread only |
 | `g:hr_filter` | `[]` | extra `hr list` flags scoping the panel |
+| `g:hr_track_opens` | `1` | log opened articles for `hr recent` |
 
 ```lua
 -- Neovim

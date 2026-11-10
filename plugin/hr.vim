@@ -11,6 +11,7 @@
 "   g:hr_width      sidebar columns          (default 60)
 "   g:hr_show_read  1 = include read items   (default 1)
 "   g:hr_filter     extra `hr list` flags    (default [])
+"   g:hr_track_opens  1 = log opens for `hr recent` (default 1)
 "
 " Commands:
 "   :Hr / :HrToggle   toggle the sidebar
@@ -23,7 +24,8 @@
 " :Hr, :HrToggle, :HrOpen and :HrStart take optional `hr list` flags that
 " scope the panel, e.g. `:Hr --group books` or `:HrStart --feed matklad
 " --unread`. hr owns the vocabulary; the plugin only forwards, so any flag
-" `hr list` accepts works. `:HrFilter -` clears the scope.
+" `hr list` accepts works. `:HrFilter -` clears the scope. A leading `recent`
+" switches the panel to `hr recent`, newest open first: `:Hr recent`.
 
 if exists('g:loaded_hr')
   finish
@@ -43,6 +45,13 @@ let g:hr_filter       = get(g:, 'hr_filter', [])
 "   g:hr_corrupt_prefix  key prefix for those maps    (default "<leader>n")
 let g:hr_corrupt_maps   = get(g:, 'hr_corrupt_maps', 1)
 let g:hr_corrupt_prefix = get(g:, 'hr_corrupt_prefix', '<leader>n')
+" Log each vault article loaded into a buffer, so `hr recent` lists it.
+let g:hr_track_opens    = get(g:, 'hr_track_opens', 1)
+
+augroup hr_track_opens
+  autocmd!
+  autocmd BufReadPost *.md call hr#track_open(expand('<afile>:p'))
+augroup END
 
 " The four openers take optional `hr list` flags; passing none leaves the
 " current filter alone, so <leader>Hr keeps toggling the view you set up.
