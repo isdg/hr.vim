@@ -7,7 +7,7 @@
 "
 " Buffer-local keys (active only in the sidebar):
 "   <CR>/o open   r read   u unread   f fav   a alias
-"   R refresh   s sync   q close   ? help
+"   t list/recent   R refresh   s sync   q close   ? help
 
 let s:state = {'winid': -1, 'bufnr': -1, 'prev_winid': -1, 'items': []}
 
@@ -284,6 +284,32 @@ function! s:rename_current() abort
   redraw
 endfunction
 
+" Flip a:flag in the filter and keep the cursor on the same article when
+" the new view still lists it. 'recent' is a subcommand, so it leads.
+function! s:toggle_view(flag) abort
+  let l:it = s:current_item()
+  let l:args = s:filter_args()
+  if a:flag ==# 'recent'
+    let l:args = get(l:args, 0, '') ==# 'recent'
+          \ ? l:args[1:] : ['recent'] + l:args
+  else
+    let l:i = index(l:args, a:flag)
+    if l:i >= 0
+      call remove(l:args, l:i)
+    else
+      call add(l:args, a:flag)
+    endif
+  endif
+  let g:hr_filter = l:args
+  call s:apply_filter()
+
+  let l:row = empty(l:it) ? 0 : s:row_of(s:state.items,
+        \ resolve(fnamemodify(get(l:it, 'path', ''), ':p')))
+  call cursor(max([l:row, 1]), 1)
+  let l:label = s:filter_label()
+  echo empty(l:label) ? 'hr: all articles' : 'hr: ' . l:label
+endfunction
+
 function! s:sync_then_redraw() abort
   call s:run(['sync'])
   call s:redraw()
@@ -297,6 +323,7 @@ function! s:show_help() abort
         \ '  u       mark unread',
         \ '  f       toggle favorite',
         \ '  a       set alias (rename label)',
+        \ '  t       flip list / recent (newest opened)',
         \ '  R       refresh',
         \ '  s       sync + refresh',
         \ '  q       close panel',
@@ -311,6 +338,7 @@ function! s:setup_keymaps() abort
   nnoremap <buffer><silent><nowait> u    :call <SID>act('unread')<CR>
   nnoremap <buffer><silent><nowait> f    :call <SID>act('fav')<CR>
   nnoremap <buffer><silent><nowait> a    :call <SID>rename_current()<CR>
+  nnoremap <buffer><silent><nowait> t    :call <SID>toggle_view('recent')<CR>
   nnoremap <buffer><silent><nowait> R    :call <SID>redraw()<CR>
   nnoremap <buffer><silent><nowait> s    :call <SID>sync_then_redraw()<CR>
   nnoremap <buffer><silent><nowait> q    :call hr#close()<CR>

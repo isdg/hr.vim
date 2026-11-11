@@ -83,6 +83,7 @@ Keys inside the sidebar:
 | `u` | mark unread |
 | `f` | toggle favorite |
 | `a` | set alias (rename label) |
+| `t` | flip list ↔ recent, keeping the other flags |
 | `R` / `s` | refresh / sync + refresh |
 | `q` | close |
 | `?` | help |

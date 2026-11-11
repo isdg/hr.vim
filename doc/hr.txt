@@ -93,6 +93,9 @@ other flags still scope it, and --since then means opened within: >
     :HrStart recent --since 7d        this week's reading
     :HrFilter recent --group humans   one shelf
 <
+In the panel, `t` flips between the two views, keeping the other flags and,
+when the new view lists it, the article under the cursor.
+
 Opens are logged by an autocmd on |BufReadPost| for *.md files under a
 vault's feeds/, running `hr opened` in the background. Loading a buffer is
 what counts: switching back to one already loaded does not, and |:edit!|
@@ -185,6 +188,7 @@ Active only inside the sidebar buffer:
   u           mark unread
   f           toggle favorite
   a           set alias (rename the displayed label)
+  t           flip between the list and the recent view, see |hr-recent|
   R           refresh
   s           sync + refresh
   q           close panel
