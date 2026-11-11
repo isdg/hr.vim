@@ -84,6 +84,7 @@ Keys inside the sidebar:
 | `f` | toggle favorite |
 | `a` | set alias (rename label) |
 | `t` | flip list ↔ recent, keeping the other flags |
+| `F` | toggle favorites only (`--fav`) |
 | `R` / `s` | refresh / sync + refresh |
 | `q` | close |
 | `?` | help |

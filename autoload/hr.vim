@@ -7,7 +7,7 @@
 "
 " Buffer-local keys (active only in the sidebar):
 "   <CR>/o open   r read   u unread   f fav   a alias
-"   t list/recent   R refresh   s sync   q close   ? help
+"   t list/recent   F favorites only   R refresh   s sync   q close   ? help
 
 let s:state = {'winid': -1, 'bufnr': -1, 'prev_winid': -1, 'items': []}
 
@@ -324,6 +324,7 @@ function! s:show_help() abort
         \ '  f       toggle favorite',
         \ '  a       set alias (rename label)',
         \ '  t       flip list / recent (newest opened)',
+        \ '  F       toggle favorites only',
         \ '  R       refresh',
         \ '  s       sync + refresh',
         \ '  q       close panel',
@@ -339,6 +340,7 @@ function! s:setup_keymaps() abort
   nnoremap <buffer><silent><nowait> f    :call <SID>act('fav')<CR>
   nnoremap <buffer><silent><nowait> a    :call <SID>rename_current()<CR>
   nnoremap <buffer><silent><nowait> t    :call <SID>toggle_view('recent')<CR>
+  nnoremap <buffer><silent><nowait> F    :call <SID>toggle_view('--fav')<CR>
   nnoremap <buffer><silent><nowait> R    :call <SID>redraw()<CR>
   nnoremap <buffer><silent><nowait> s    :call <SID>sync_then_redraw()<CR>
   nnoremap <buffer><silent><nowait> q    :call hr#close()<CR>

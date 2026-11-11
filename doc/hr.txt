@@ -38,7 +38,7 @@ g:hr_filter     Extra `hr list` flags scoping the panel: a list
                 (['--group', 'books']) or a whitespace-separated string
                 ('--group books'). hr owns the flag vocabulary — the plugin
                 only forwards — so anything `hr list` accepts works, e.g.
-                --group, --feed, --tag, --since, --corrupted. See
+                --group, --feed, --tag, --since, --fav, --corrupted. See
                 |hr-filter|.                              Default: []
 
                                                             *g:hr_track_opens*
@@ -189,6 +189,7 @@ Active only inside the sidebar buffer:
   f           toggle favorite
   a           set alias (rename the displayed label)
   t           flip between the list and the recent view, see |hr-recent|
+  F           toggle `--fav` in the filter: favorites only
   R           refresh
   s           sync + refresh
   q           close panel
