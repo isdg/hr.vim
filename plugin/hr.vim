@@ -81,7 +81,7 @@ command! -bar          -nargs=0 HrCorruptUndo call hr#corrupt_undo()
 command! -bar -nargs=0 HrLocate call hr#locate()
 
 " Reading place: :HrBookmark saves the cursor (! clears), :HrResume
-" returns to it.
+" opens the most recently bookmarked article there.
 command! -bar -bang -nargs=0 HrBookmark call hr#bookmark(<bang>0)
 command! -bar       -nargs=0 HrResume   call hr#resume()
 

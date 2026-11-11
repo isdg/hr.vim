@@ -112,8 +112,9 @@ that event to the plugin spec so opens before the first `:Hr` count too:
 ### Bookmarks
 
 `:HrBookmark` saves the cursor as the article's reading place (`!` drops
-it) and `:HrResume` jumps back. Opening a bookmarked article puts you there
-directly. The CLI keeps them, one per article, in an append-only log at
+it). Opening a bookmarked article puts you there directly, and
+`:HrResume` opens the one you bookmarked last, from anywhere: continue
+reading. The CLI keeps them, one per article, in an append-only log at
 `~/.hr/<vault>/bookmarks.jsonl`; rows show a `B` and `B` in the panel
 toggles a bookmarked-only view. Bind `<Plug>(HrBookmark)` and
 `<Plug>(HrResume)` to keys of your choice.

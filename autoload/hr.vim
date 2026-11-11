@@ -230,29 +230,38 @@ endfunction
 
 function! s:open_current() abort
   let l:it = s:current_item()
-  if empty(l:it)
-    return
+  if !empty(l:it)
+    call s:open_article(get(l:it, 'path', ''))
   endif
+endfunction
 
-  let l:target = s:state.prev_winid
-  if !(l:target > 0 && win_id2win(l:target) != 0 && l:target != s:state.winid)
-    let l:target = 0
-  endif
-
-  if l:target
-    call win_gotoid(l:target)
-  else
-    wincmd l
-    if win_getid() == s:state.winid
-      rightbelow vsplit
+" Open a:path for reading. From the panel, that is the window it last
+" opened into, or a new split beside it; anywhere else, the current window.
+function! s:open_article(path) abort
+  let l:from_panel = s:is_open() && win_getid() == s:state.winid
+  if l:from_panel
+    let l:target = s:state.prev_winid
+    if !(l:target > 0 && win_id2win(l:target) != 0
+          \ && l:target != s:state.winid)
+      let l:target = 0
+    endif
+    if l:target
+      call win_gotoid(l:target)
+    else
+      wincmd l
+      if win_getid() == s:state.winid
+        rightbelow vsplit
+      endif
     endif
   endif
 
-  execute 'edit ' . fnameescape(get(l:it, 'path', ''))
-  " A split spawned from the panel inherits its window-local options
-  " (signcolumn=no, winfixwidth, cursorline); restore normal-file defaults so
-  " the git gutter shows and the article window can be resized.
-  setlocal signcolumn=yes nowinfixwidth nocursorline
+  execute 'edit ' . fnameescape(a:path)
+  if l:from_panel
+    " A split spawned from the panel inherits its window-local options
+    " (signcolumn=no, winfixwidth, cursorline); restore normal-file
+    " defaults so the git gutter shows and the window can be resized.
+    setlocal signcolumn=yes nowinfixwidth nocursorline
+  endif
   call s:setup_article_keymaps()
   let s:state.prev_winid = win_getid()
 endfunction
@@ -571,21 +580,20 @@ function! hr#bookmark(clear) abort
   endif
 endfunction
 
-" Jump to the article's reading place, leaving a jumplist entry behind.
+" Open the most recently bookmarked article at its reading place, from the
+" panel or anywhere, leaving a jumplist entry behind.
 function! hr#resume() abort
-  let l:path = s:article_path()
-  if empty(l:path)
-    return
-  endif
-  let [l:ok, l:out] = s:run(['bookmark', l:path])
+  let [l:ok, l:out] = s:run(['bookmark', '--last'])
   if !l:ok
     return
   endif
-  let l:pos = s:parse_pos(l:out)
+  let l:parts = split(substitute(l:out, '\n\+$', '', ''), "\t")
+  let l:pos = len(l:parts) == 2 ? s:parse_pos(l:parts[1]) : []
   if empty(l:pos)
-    echohl WarningMsg | echomsg 'hr: no bookmark here' | echohl NONE
+    echohl WarningMsg | echomsg 'hr: no bookmarks' | echohl NONE
     return
   endif
+  call s:open_article(l:parts[0])
   call s:goto(l:pos)
 endfunction
 

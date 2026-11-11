@@ -135,12 +135,16 @@ entry wins. >
 
     :HrBookmark                       save the cursor as the reading place
     :HrBookmark!                      drop it
-    :HrResume                         jump back to it
+    :HrResume                         open the newest bookmark
 <
 When a vault article loads into a buffer — from the panel, the shell or
 anywhere else — the cursor goes to its bookmark (see |g:hr_resume|). That
-happens once per buffer, so |:edit!| leaves the cursor where it is. Jumps
-leave an entry in the |jumplist|, so CTRL-O returns.
+happens once per buffer, so |:edit!| leaves the cursor where it is.
+
+|:HrResume| is "continue reading": from the panel or any window, it opens
+the article you bookmarked most recently at its reading place (`hr bookmark
+--last`), skipping bookmarks on deleted articles. Jumps leave an entry in
+the |jumplist|, so CTRL-O returns.
 
 Bookmarked rows show a B in the panel's state column, and `B` there toggles
 a bookmarked-only view (`--bookmarked`).
@@ -187,7 +191,8 @@ Run these from within an opened article (any saved .md buffer):
 :HrCorruptUndo          Remove the most recent corruption mark on the article.
 :HrBookmark[!]          Save the cursor as the article's reading place; with
                         ! drop it. See |hr-bookmarks|.
-:HrResume               Jump to the article's reading place.
+:HrResume               Open the most recently bookmarked article at its
+                        reading place, from anywhere.
 :HrLocate               Close this article's window and jump the cursor to its
                         row in the feed panel (opening the panel if closed), so
                         you can act on it there. See |hr-locate|.
