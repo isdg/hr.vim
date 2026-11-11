@@ -21,7 +21,7 @@
 "   :HrRefresh        re-fetch the list
 "   :HrSync           sync feeds + refresh
 "   :HrFilter         set/report the flags scoping the panel
-"   :HrView {view}    flip one view: recent, --fav, --bookmarked, ...
+"   :HrView {view}    switch view: recent, --fav or --bookmarked
 "
 " :Hr, :HrToggle, :HrOpen and :HrStart take optional `hr list` flags that
 " scope the panel, e.g. `:Hr --group books` or `:HrStart --feed matklad
@@ -67,7 +67,7 @@ command! -bar -nargs=* HrStart   call hr#start(<q-args>)
 command! -bar -nargs=0 HrRefresh call hr#refresh()
 command! -bar -nargs=0 HrSync    call hr#sync()
 command! -bar -nargs=* HrFilter  call hr#filter(<q-args>)
-" Flip one view of the filter (recent, --fav, ...) from anywhere.
+" Switch the panel's view (recent, --fav, --bookmarked) from anywhere.
 command! -bar -nargs=1 -complete=customlist,hr#view_complete
       \ HrView call hr#toggle_view(<q-args>)
 

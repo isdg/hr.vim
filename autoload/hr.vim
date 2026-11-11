@@ -745,28 +745,51 @@ function! s:apply_filter() abort
   endif
 endfunction
 
-" Flip one token of the filter (|hr-views|) and show the panel. The cursor
-" stays on the article it was on, the panel row or the one being read, when
-" the new view lists it. 'recent' is a subcommand, so it leads.
-function! hr#toggle_view(flag) abort
+" The panel's views are exclusive: at most one of these is in the filter.
+let s:views = ['recent', '--fav', '--bookmarked']
+
+" Split the filter into [view, scope]: the view in effect ('' for the plain
+" list) and every other flag. 'recent' is a subcommand, so only a leading
+" one counts; a duplicate or second view (an older filter) is dropped.
+function! s:split_view(args) abort
+  let l:view = ''
+  let l:scope = copy(a:args)
+  if get(l:scope, 0, '') ==# 'recent'
+    let l:view = 'recent'
+    call remove(l:scope, 0)
+  endif
+  for l:flag in s:views[1:]
+    if index(l:scope, l:flag) >= 0
+      let l:view = empty(l:view) ? l:flag : l:view
+      call filter(l:scope, 'v:val !=# l:flag')
+    endif
+  endfor
+  return [l:view, l:scope]
+endfunction
+
+" Switch the panel to a:view (|hr-views|), or back to the plain list when
+" it is already showing it, keeping the scope flags, and show the panel.
+" The cursor stays on the article it was on, the panel row or the one
+" being read, when the new view lists it.
+function! hr#toggle_view(view) abort
+  if index(s:views, a:view) < 0
+    echohl ErrorMsg
+    echomsg 'hr: no view ' . a:view . ', want one of ' . join(s:views, ' ')
+    echohl NONE
+    return
+  endif
   if s:is_open() && win_getid() == s:state.winid
     let l:anchor = get(s:current_item(), 'path', '')
   else
     let l:anchor = &buftype ==# '' ? expand('%:p') : ''
   endif
-  let l:args = s:filter_args()
-  if a:flag ==# 'recent'
-    let l:args = get(l:args, 0, '') ==# 'recent'
-          \ ? l:args[1:] : ['recent'] + l:args
+  let [l:view, l:args] = s:split_view(s:filter_args())
+  if l:view ==# a:view && s:filter_args() ==# s:join_view(l:view, l:args)
+    let l:view = ''
   else
-    let l:i = index(l:args, a:flag)
-    if l:i >= 0
-      call remove(l:args, l:i)
-    else
-      call add(l:args, a:flag)
-    endif
+    let l:view = a:view
   endif
-  let g:hr_filter = l:args
+  let g:hr_filter = s:join_view(l:view, l:args)
   if s:is_open()
     call s:apply_filter()
     call win_gotoid(s:state.winid)
@@ -784,9 +807,15 @@ function! hr#toggle_view(flag) abort
   echo empty(l:label) ? 'hr: all articles' : 'hr: ' . l:label
 endfunction
 
+function! s:join_view(view, scope) abort
+  if empty(a:view)
+    return copy(a:scope)
+  endif
+  return a:view ==# 'recent' ? ['recent'] + a:scope : a:scope + [a:view]
+endfunction
+
 function! hr#view_complete(lead, line, pos) abort
-  let l:views = ['recent', '--fav', '--bookmarked', '--unread', '--corrupted']
-  return filter(l:views, 'stridx(v:val, a:lead) == 0')
+  return filter(copy(s:views), 'stridx(v:val, a:lead) == 0')
 endfunction
 
 function! hr#sync() abort

@@ -53,7 +53,7 @@ Then `:helptags ALL` (or `:Helptags`) once to index the docs.
 | `:HrRefresh` | re-fetch the list |
 | `:HrSync` | `hr sync` then refresh |
 | `:HrFilter [flags]` | scope the panel; no args reports, `-` clears |
-| `:HrView {view}` | flip `recent`, `--fav`, `--bookmarked`, … and show the panel |
+| `:HrView {view}` | switch to `recent`, `--fav` or `--bookmarked` (again: back to the list) |
 
 `:Hr`, `:HrToggle`, `:HrOpen` and `:HrStart` also take optional `hr list`
 flags that scope the panel:
@@ -84,7 +84,7 @@ Keys inside the sidebar:
 | `u` | mark unread |
 | `f` | toggle favorite |
 | `a` | set alias (rename label) |
-| `t` | flip list ↔ recent, keeping the other flags |
+| `t` | switch list ↔ recent (views replace each other) |
 | `F` | toggle favorites only (`--fav`) |
 | `B` | toggle bookmarked only (`--bookmarked`) |
 | `R` / `s` | refresh / sync + refresh |

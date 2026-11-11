@@ -91,17 +91,19 @@ for read items.
 ==============================================================================
 VIEWS                                                              *hr-views*
 
-A view is one token of the filter flipped on or off, from the panel keys or
-from anywhere with |:HrView|:
+The panel shows one view at a time: the plain list or one of these, switched
+from the panel keys or from anywhere with |:HrView|:
 
-    t   :HrView recent         list <-> recent, see |hr-recent|
+    t   :HrView recent         what you opened, see |hr-recent|
     F   :HrView --fav          favorites only
     B   :HrView --bookmarked   bookmarked only, see |hr-bookmarks|
 
-Any other single flag works too (`:HrView --unread`). Flipping keeps the rest
-of the filter, opens the panel if it is closed and focuses it, and puts the
-cursor on the article you were on, the panel row or the article being read,
-when the new view lists it.
+Views replace each other rather than stack: F under recent shows all your
+favorites, not the recent ones. Switching to the view already shown returns
+to the plain list. The other flags in the filter, the scope set with
+|:HrFilter| or `hrv`, stay. Switching opens the panel if it is closed and
+focuses it, and puts the cursor on the article you were on, the panel row
+or the article being read, when the new view lists it.
 
 ==============================================================================
 RECENT                                                            *hr-recent*
@@ -114,8 +116,7 @@ other flags still scope it, and --since then means opened within: >
     :HrStart recent --since 7d        this week's reading
     :HrFilter recent --group humans   one shelf
 <
-In the panel, `t` flips between the two views, keeping the other flags and,
-when the new view lists it, the article under the cursor.
+In the panel, `t` switches between the list and this view, see |hr-views|.
 
 Opens are logged by an autocmd on |BufReadPost| for *.md files under a
 vault's feeds/, running `hr opened` in the background. Loading a buffer is
@@ -167,8 +168,9 @@ that scope the panel — `:Hr --group books`, `:HrStart --feed matklad
 --unread`. Passing none leaves the current scope alone, so a bare :Hr keeps
 toggling the view you set up. See |hr-filter|.
 
-:HrView {view}          Flip one view in the filter and show the panel,
-                        e.g. `:HrView recent`. See |hr-views|.
+:HrView {view}          Switch the panel to a view (recent, --fav,
+                        --bookmarked), or back to the plain list when it
+                        is already shown. See |hr-views|.
 
 :HrFilter [flags]       Set the flags scoping the panel, applying them at
                         once when it is open. With no arguments, report the
