@@ -96,7 +96,8 @@ from the panel keys or from anywhere with |:HrView|:
 
     R   :HrView recent         what you opened, see |hr-recent|
     F   :HrView --fav          favorites only
-    B   :HrView --bookmarked   bookmarked only, see |hr-bookmarks|
+    B   :HrView bookmarks      bookmarked, newest bookmark first, see
+                               |hr-bookmarks|
 
 Views replace each other rather than stack: F under recent shows all your
 favorites, not the recent ones. Switching to the view already shown returns
@@ -146,8 +147,10 @@ the article you bookmarked most recently at its reading place (`hr bookmark
 --last`), skipping bookmarks on deleted articles. Jumps leave an entry in
 the |jumplist|, so CTRL-O returns.
 
-Bookmarked rows show a B in the panel's state column, and `B` there toggles
-a bookmarked-only view (`--bookmarked`).
+Bookmarked rows show a B in the panel's state column. `B` there switches to
+the bookmarks view (`hr bookmarks`): bookmarked articles, most recently
+bookmarked first, dated by when the bookmark was set. Setting a bookmark
+where it already is changes nothing; each article has one.
 
 No key is bound by default; bind the <Plug> targets yourself: >
     nmap <leader>nb <Plug>(HrBookmark)
@@ -172,9 +175,9 @@ that scope the panel — `:Hr --group books`, `:HrStart --feed matklad
 --unread`. Passing none leaves the current scope alone, so a bare :Hr keeps
 toggling the view you set up. See |hr-filter|.
 
-:HrView {view}          Switch the panel to a view (recent, --fav,
-                        --bookmarked), or back to the plain list when it
-                        is already shown. See |hr-views|.
+:HrView {view}          Switch the panel to a view (recent, bookmarks,
+                        --fav), or back to the plain list when it is
+                        already shown. See |hr-views|.
 
 :HrFilter [flags]       Set the flags scoping the panel, applying them at
                         once when it is open. With no arguments, report the
@@ -248,7 +251,7 @@ Active only inside the sidebar buffer:
   a           set alias (rename the displayed label)
   R           flip between the list and the recent view, see |hr-recent|
   F           toggle `--fav` in the filter: favorites only
-  B           toggle `--bookmarked` in the filter: bookmarked only
+  B           flip between the list and the bookmarks view
   gr          refresh
   s           sync + refresh
   q           close panel

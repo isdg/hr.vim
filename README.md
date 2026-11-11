@@ -53,7 +53,7 @@ Then `:helptags ALL` (or `:Helptags`) once to index the docs.
 | `:HrRefresh` | re-fetch the list |
 | `:HrSync` | `hr sync` then refresh |
 | `:HrFilter [flags]` | scope the panel; no args reports, `-` clears |
-| `:HrView {view}` | switch to `recent`, `--fav` or `--bookmarked` (again: back to the list) |
+| `:HrView {view}` | switch to `recent`, `bookmarks` or `--fav` (again: back to the list) |
 
 `:Hr`, `:HrToggle`, `:HrOpen` and `:HrStart` also take optional `hr list`
 flags that scope the panel:
@@ -86,7 +86,7 @@ Keys inside the sidebar:
 | `a` | set alias (rename label) |
 | `R` | switch list ↔ recent (views replace each other) |
 | `F` | toggle favorites only (`--fav`) |
-| `B` | toggle bookmarked only (`--bookmarked`) |
+| `B` | switch list ↔ bookmarks (newest bookmark first) |
 | `gr` / `s` | refresh / sync + refresh |
 | `q` | close |
 | `?` | help |
@@ -115,8 +115,8 @@ that event to the plugin spec so opens before the first `:Hr` count too:
 it). Opening a bookmarked article puts you there directly, and
 `:HrResume` opens the one you bookmarked last, from anywhere: continue
 reading. The CLI keeps them, one per article, in an append-only log at
-`~/.hr/<vault>/bookmarks.jsonl`; rows show a `B` and `B` in the panel
-toggles a bookmarked-only view. Bind `<Plug>(HrBookmark)` and
+`~/.hr/<vault>/bookmarks.jsonl`; rows show a `B`, and `B` in the panel
+switches to the bookmarks view, newest bookmark first. Bind `<Plug>(HrBookmark)` and
 `<Plug>(HrResume)` to keys of your choice.
 
 ## Configuration

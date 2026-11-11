@@ -7,7 +7,7 @@
 "
 " Buffer-local keys (active only in the sidebar):
 "   <CR>/o open   r read   u unread   f fav   a alias
-"   R list/recent   F favorites only   B bookmarked only
+"   R list/recent   F favorites only   B bookmarks
 "   gr refresh   s sync   q close   ? help
 
 let s:state = {'winid': -1, 'bufnr': -1, 'prev_winid': -1, 'items': []}
@@ -118,9 +118,10 @@ endfunction
 function! s:fetch_items(...) abort
   let l:all = a:0 >= 1 && a:1
   let l:filter = l:all ? [] : s:filter_args()
-  if get(l:filter, 0, '') ==# 'recent'
-    " What you opened, read or not, so g:hr_show_read does not apply.
-    let l:args = ['recent', '--json'] + l:filter[1:]
+  if index(s:subcommands, get(l:filter, 0, '')) >= 0
+    " What you opened or bookmarked, read or not, so g:hr_show_read does
+    " not apply.
+    let l:args = [l:filter[0], '--json'] + l:filter[1:]
   else
     let l:args = ['list', '--json']
     if !l:all && !s:truthy(g:hr_show_read)
@@ -157,8 +158,9 @@ function! s:render(items) abort
     let l:r     = s:truthy(get(l:it, 'read', 0))     ? 'R' : ' '
     let l:fav   = s:truthy(get(l:it, 'favorite', 0)) ? 'F' : ' '
     let l:mark  = empty(get(l:it, 'bookmark', {})) ? ' ' : 'B'
-    " The recent view shows when you opened an item, not when it appeared.
-    let l:opened = get(l:it, 'opened', '')
+    " The recent and bookmarks views show when you opened or bookmarked an
+    " item, not when it appeared.
+    let l:opened = get(l:it, 'opened', get(l:it, 'bookmarked_at', ''))
     let l:date = empty(l:opened)
           \ ? strpart(get(l:it, 'published', ''), 0, 10)
           \ : strpart(l:opened, 0, 10) . ' ' . strpart(l:opened, 11, 5)
@@ -316,7 +318,7 @@ function! s:show_help() abort
         \ '  a       set alias (rename label)',
         \ '  R       flip list / recent (newest opened)',
         \ '  F       toggle favorites only',
-        \ '  B       toggle bookmarked only',
+        \ '  B       flip list / bookmarks (newest bookmarked)',
         \ '  gr      refresh',
         \ '  s       sync + refresh',
         \ '  q       close panel',
@@ -334,7 +336,7 @@ function! s:setup_keymaps() abort
   nnoremap <buffer><silent><nowait> R    :call hr#toggle_view('recent')<CR>
   nnoremap <buffer><silent><nowait> F    :call hr#toggle_view('--fav')<CR>
   nnoremap <buffer><silent><nowait> B
-        \ :call hr#toggle_view('--bookmarked')<CR>
+        \ :call hr#toggle_view('bookmarks')<CR>
   nnoremap <buffer><silent><nowait> gr   :call <SID>redraw()<CR>
   nnoremap <buffer><silent><nowait> s    :call <SID>sync_then_redraw()<CR>
   nnoremap <buffer><silent><nowait> q    :call hr#close()<CR>
@@ -754,19 +756,20 @@ function! s:apply_filter() abort
 endfunction
 
 " The panel's views are exclusive: at most one of these is in the filter.
-let s:views = ['recent', '--fav', '--bookmarked']
+" Views that are hr subcommands rather than `hr list` flags.
+let s:subcommands = ['recent', 'bookmarks']
+let s:views = s:subcommands + ['--fav']
 
 " Split the filter into [view, scope]: the view in effect ('' for the plain
-" list) and every other flag. 'recent' is a subcommand, so only a leading
-" one counts; a duplicate or second view (an older filter) is dropped.
+" list) and every other flag. A subcommand only counts leading; a second
+" view (an older filter) is dropped.
 function! s:split_view(args) abort
   let l:view = ''
   let l:scope = copy(a:args)
-  if get(l:scope, 0, '') ==# 'recent'
-    let l:view = 'recent'
-    call remove(l:scope, 0)
+  if index(s:subcommands, get(l:scope, 0, '')) >= 0
+    let l:view = remove(l:scope, 0)
   endif
-  for l:flag in s:views[1:]
+  for l:flag in s:views[len(s:subcommands):]
     if index(l:scope, l:flag) >= 0
       let l:view = empty(l:view) ? l:flag : l:view
       call filter(l:scope, 'v:val !=# l:flag')
@@ -819,7 +822,8 @@ function! s:join_view(view, scope) abort
   if empty(a:view)
     return copy(a:scope)
   endif
-  return a:view ==# 'recent' ? ['recent'] + a:scope : a:scope + [a:view]
+  return index(s:subcommands, a:view) >= 0
+        \ ? [a:view] + a:scope : a:scope + [a:view]
 endfunction
 
 function! hr#view_complete(lead, line, pos) abort
