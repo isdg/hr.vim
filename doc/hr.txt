@@ -38,13 +38,19 @@ g:hr_filter     Extra `hr list` flags scoping the panel: a list
                 (['--group', 'books']) or a whitespace-separated string
                 ('--group books'). hr owns the flag vocabulary — the plugin
                 only forwards — so anything `hr list` accepts works, e.g.
-                --group, --feed, --tag, --since, --fav, --corrupted. See
+                --group, --feed, --tag, --since, --fav, --bookmarked,
+                --corrupted. See
                 |hr-filter|.                              Default: []
 
                                                             *g:hr_track_opens*
 g:hr_track_opens  1 to log every vault article loaded into a buffer with
                 `hr opened`, which is what `hr recent` lists. 0 stops it.
                 See |hr-recent|.                          Default: 1
+
+                                                                *g:hr_resume*
+g:hr_resume     1 to put the cursor on an article's bookmark when the
+                article loads into a buffer, 0 to stay at the top and
+                jump with |:HrResume|. See |hr-bookmarks|.  Default: 1
 
                                                             *g:hr_corrupt_maps*
 g:hr_corrupt_maps   1 to install the buffer-local corruption-marking keys on
@@ -104,6 +110,30 @@ to stop logging. With lazy-loading, load the plugin on BufReadPost *.md
 too, or opens made before the first :Hr command go unrecorded.
 
 ==============================================================================
+BOOKMARKS                                                      *hr-bookmarks*
+
+A bookmark is where you stopped reading an article: one per article, kept by
+`hr bookmark` in this machine's ~/.hr/<vault>/bookmarks.jsonl. The log is
+append-only, so every move of a reading place stays on record; the latest
+entry wins. >
+
+    :HrBookmark                       save the cursor as the reading place
+    :HrBookmark!                      drop it
+    :HrResume                         jump back to it
+<
+When a vault article loads into a buffer — from the panel, the shell or
+anywhere else — the cursor goes to its bookmark (see |g:hr_resume|). That
+happens once per buffer, so |:edit!| leaves the cursor where it is. Jumps
+leave an entry in the |jumplist|, so CTRL-O returns.
+
+Bookmarked rows show a B in the panel's state column, and `B` there toggles
+a bookmarked-only view (`--bookmarked`).
+
+No key is bound by default; bind the <Plug> targets yourself: >
+    nmap <leader>nb <Plug>(HrBookmark)
+    nmap <leader>nB <Plug>(HrResume)
+<
+==============================================================================
 COMMANDS                                                        *hr-commands*
 
 :Hr  :HrToggle          Toggle the sidebar. When opening, closes all other
@@ -135,6 +165,9 @@ Run these from within an opened article (any saved .md buffer):
                         exact selection is sent to the CLI, which rejects the
                         mark if it doesn't match the computed byte range.
 :HrCorruptUndo          Remove the most recent corruption mark on the article.
+:HrBookmark[!]          Save the cursor as the article's reading place; with
+                        ! drop it. See |hr-bookmarks|.
+:HrResume               Jump to the article's reading place.
 :HrLocate               Close this article's window and jump the cursor to its
                         row in the feed panel (opening the panel if closed), so
                         you can act on it there. See |hr-locate|.
@@ -190,6 +223,7 @@ Active only inside the sidebar buffer:
   a           set alias (rename the displayed label)
   t           flip between the list and the recent view, see |hr-recent|
   F           toggle `--fav` in the filter: favorites only
+  B           toggle `--bookmarked` in the filter: bookmarked only
   R           refresh
   s           sync + refresh
   q           close panel

@@ -7,8 +7,8 @@ maps a handful of keys to mark read/unread, favorite, alias, sync, and refresh.
 Pure Vimscript — no Lua, no dependencies beyond the `hr` binary.
 
 ```
-[ F] 2026-06-04  matklad   CSS: unavoidable bad parts
-[R ] 2021-04-26  mcyoung   Move constructors in Rust: is it possible?
+[ F ] 2026-06-04  matklad   CSS: unavoidable bad parts
+[R B] 2021-04-26  mcyoung   Move constructors in Rust: is it possible?
 ```
 
 ## Install
@@ -85,6 +85,7 @@ Keys inside the sidebar:
 | `a` | set alias (rename label) |
 | `t` | flip list ↔ recent, keeping the other flags |
 | `F` | toggle favorites only (`--fav`) |
+| `B` | toggle bookmarked only (`--bookmarked`) |
 | `R` / `s` | refresh / sync + refresh |
 | `q` | close |
 | `?` | help |
@@ -107,6 +108,15 @@ that event to the plugin spec so opens before the first `:Hr` count too:
 { "isdg/hr.vim", event = "BufReadPost *.md", cmd = { "Hr", "HrStart" } }
 ```
 
+### Bookmarks
+
+`:HrBookmark` saves the cursor as the article's reading place (`!` drops
+it) and `:HrResume` jumps back. Opening a bookmarked article puts you there
+directly. The CLI keeps them, one per article, in an append-only log at
+`~/.hr/<vault>/bookmarks.jsonl`; rows show a `B` and `B` in the panel
+toggles a bookmarked-only view. Bind `<Plug>(HrBookmark)` and
+`<Plug>(HrResume)` to keys of your choice.
+
 ## Configuration
 
 | Variable | Default | Meaning |
@@ -118,6 +128,7 @@ that event to the plugin spec so opens before the first `:Hr` count too:
 | `g:hr_show_read` | `1` | `1` = include read items, `0` = unread only |
 | `g:hr_filter` | `[]` | extra `hr list` flags scoping the panel |
 | `g:hr_track_opens` | `1` | log opened articles for `hr recent` |
+| `g:hr_resume` | `1` | open articles at their bookmark |
 
 ```lua
 -- Neovim

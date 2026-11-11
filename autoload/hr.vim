@@ -7,7 +7,8 @@
 "
 " Buffer-local keys (active only in the sidebar):
 "   <CR>/o open   r read   u unread   f fav   a alias
-"   t list/recent   F favorites only   R refresh   s sync   q close   ? help
+"   t list/recent   F favorites only   B bookmarked only
+"   R refresh   s sync   q close   ? help
 
 let s:state = {'winid': -1, 'bufnr': -1, 'prev_winid': -1, 'items': []}
 
@@ -55,12 +56,18 @@ function! s:base_cmd() abort
   return l:cmd
 endfunction
 
-" Returns [ok, output]. Shows an error and returns [0, ''] on non-zero exit.
+" Returns [ok, output], the output being the error on non-zero exit.
 " When a:input is given (non-empty string), it is fed to the CLI on stdin.
-function! s:run(args, ...) abort
+function! s:capture(args, ...) abort
   let l:cmd = join(map(s:base_cmd() + a:args, 'shellescape(v:val)'), ' ')
   let l:out = (a:0 >= 1) ? system(l:cmd, a:1) : system(l:cmd)
-  if v:shell_error != 0
+  return [v:shell_error == 0, l:out]
+endfunction
+
+" s:capture that shows an error and returns [0, ''] on non-zero exit.
+function! s:run(args, ...) abort
+  let [l:ok, l:out] = call('s:capture', [a:args] + a:000)
+  if !l:ok
     echohl ErrorMsg
     echomsg 'hr: ' . substitute(l:out, '\n', ' ', 'g')
     echohl NONE
@@ -149,6 +156,7 @@ function! s:render(items) abort
   for l:it in a:items
     let l:r     = s:truthy(get(l:it, 'read', 0))     ? 'R' : ' '
     let l:fav   = s:truthy(get(l:it, 'favorite', 0)) ? 'F' : ' '
+    let l:mark  = empty(get(l:it, 'bookmark', {})) ? ' ' : 'B'
     " The recent view shows when you opened an item, not when it appeared.
     let l:opened = get(l:it, 'opened', '')
     let l:date = empty(l:opened)
@@ -158,8 +166,8 @@ function! s:render(items) abort
     let l:alias = get(l:it, 'alias', '')
     let l:label = (type(l:alias) == v:t_string && l:alias !=# '')
           \ ? l:alias : get(l:it, 'title', '')
-    call add(l:lines, printf('[%s%s] %s  %-' . l:feed_w . 's  %s',
-          \ l:r, l:fav, l:date, l:feed, l:label))
+    call add(l:lines, printf('[%s%s%s] %s  %-' . l:feed_w . 's  %s',
+          \ l:r, l:fav, l:mark, l:date, l:feed, l:label))
   endfor
   return l:lines
 endfunction
@@ -325,6 +333,7 @@ function! s:show_help() abort
         \ '  a       set alias (rename label)',
         \ '  t       flip list / recent (newest opened)',
         \ '  F       toggle favorites only',
+        \ '  B       toggle bookmarked only',
         \ '  R       refresh',
         \ '  s       sync + refresh',
         \ '  q       close panel',
@@ -341,6 +350,8 @@ function! s:setup_keymaps() abort
   nnoremap <buffer><silent><nowait> a    :call <SID>rename_current()<CR>
   nnoremap <buffer><silent><nowait> t    :call <SID>toggle_view('recent')<CR>
   nnoremap <buffer><silent><nowait> F    :call <SID>toggle_view('--fav')<CR>
+  nnoremap <buffer><silent><nowait> B
+        \ :call <SID>toggle_view('--bookmarked')<CR>
   nnoremap <buffer><silent><nowait> R    :call <SID>redraw()<CR>
   nnoremap <buffer><silent><nowait> s    :call <SID>sync_then_redraw()<CR>
   nnoremap <buffer><silent><nowait> q    :call hr#close()<CR>
@@ -536,6 +547,74 @@ function! s:setup_article_keymaps() abort
   execute 'nnoremap <buffer><silent> ' . l:p . 'u <Plug>(HrCorruptUndo)'
 endfunction
 
+" ── bookmarks (used inside an opened article) ──────────────
+"
+" One reading place per article, kept by `hr bookmark` in the vault's
+" state log. Positions cross as LINE:COL, 1-based line and 0-based byte
+" column, so col('.') - 1 out and col + 1 back in.
+
+" [line, col] of the article's bookmark, or [] when it has none. Quiet:
+" this runs on every article load.
+function! s:bookmark_of(path) abort
+  let [l:ok, l:out] = s:capture(['bookmark', a:path])
+  return l:ok ? s:parse_pos(l:out) : []
+endfunction
+
+function! s:parse_pos(out) abort
+  let l:m = matchlist(a:out, '^\(\d\+\):\(\d\+\)')
+  return empty(l:m) ? [] : [str2nr(l:m[1]), str2nr(l:m[2])]
+endfunction
+
+function! s:goto(pos) abort
+  normal! m'
+  call cursor(a:pos[0], a:pos[1] + 1)
+  normal! zvzz
+endfunction
+
+function! s:redraw_panel() abort
+  if s:is_open()
+    call s:redraw()
+  endif
+endfunction
+
+" Save the cursor as the article's reading place; with a:clear, drop it.
+function! hr#bookmark(clear) abort
+  let l:path = s:article_path()
+  if empty(l:path)
+    return
+  endif
+  if a:clear
+    let [l:ok, l:_] = s:run(['bookmark', '--clear', l:path])
+    let l:msg = 'hr: bookmark cleared'
+  else
+    let l:at = printf('%d:%d', line('.'), col('.') - 1)
+    let [l:ok, l:_] = s:run(['bookmark', l:path, l:at])
+    let l:msg = 'hr: bookmarked line ' . line('.')
+  endif
+  if l:ok
+    call s:redraw_panel()
+    echo l:msg
+  endif
+endfunction
+
+" Jump to the article's reading place, leaving a jumplist entry behind.
+function! hr#resume() abort
+  let l:path = s:article_path()
+  if empty(l:path)
+    return
+  endif
+  let [l:ok, l:out] = s:run(['bookmark', l:path])
+  if !l:ok
+    return
+  endif
+  let l:pos = s:parse_pos(l:out)
+  if empty(l:pos)
+    echohl WarningMsg | echomsg 'hr: no bookmark here' | echohl NONE
+    return
+  endif
+  call s:goto(l:pos)
+endfunction
+
 " Run a command in the background, discarding its output.
 function! s:spawn(cmd) abort
   if exists('*jobstart')
@@ -548,18 +627,39 @@ endfunction
 
 " ── public API ─────────────────────────────────────────────
 
-" Record that the article at a:path was opened, for `hr recent`. Called on
-" every *.md load, so it bails cheaply on files outside a vault's feeds/;
-" hr finds the vault from the path itself, whatever the cwd.
-function! hr#track_open(path) abort
-  if !s:truthy(get(g:, 'hr_track_opens', 1)) || a:path !~# '/feeds/'
-    return
+" Whether a:path lies under a vault's feeds/: cheap enough to run on
+" every *.md load, so hr is only spawned for articles.
+function! s:in_vault(path) abort
+  if a:path !~# '/feeds/'
+    return 0
   endif
   let l:dir = escape(fnamemodify(a:path, ':h'), ' ,;\')
-  if empty(findfile('hr.toml', l:dir . ';'))
+  return !empty(findfile('hr.toml', l:dir . ';'))
+endfunction
+
+" Record that the article at a:path was opened, for `hr recent`. hr finds
+" the vault from the path itself, whatever the cwd.
+function! hr#track_open(path) abort
+  if !s:truthy(get(g:, 'hr_track_opens', 1)) || !s:in_vault(a:path)
     return
   endif
   call s:spawn([g:hr_binary, 'opened', a:path])
+endfunction
+
+" Called on every *.md load: log the open and return to the reading place.
+function! hr#on_read(path) abort
+  if !s:in_vault(a:path)
+    return
+  endif
+  call hr#track_open(a:path)
+  " Once per buffer, so :edit! does not yank you back mid-article.
+  if s:truthy(get(g:, 'hr_resume', 1)) && !get(b:, 'hr_resumed', 0)
+    let b:hr_resumed = 1
+    let l:pos = s:bookmark_of(a:path)
+    if !empty(l:pos)
+      call s:goto(l:pos)
+    endif
+  endif
 endfunction
 
 

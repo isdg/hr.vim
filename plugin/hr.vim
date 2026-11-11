@@ -12,6 +12,7 @@
 "   g:hr_show_read  1 = include read items   (default 1)
 "   g:hr_filter     extra `hr list` flags    (default [])
 "   g:hr_track_opens  1 = log opens for `hr recent` (default 1)
+"   g:hr_resume     1 = open articles at their bookmark (default 1)
 "
 " Commands:
 "   :Hr / :HrToggle   toggle the sidebar
@@ -47,10 +48,12 @@ let g:hr_corrupt_maps   = get(g:, 'hr_corrupt_maps', 1)
 let g:hr_corrupt_prefix = get(g:, 'hr_corrupt_prefix', '<leader>n')
 " Log each vault article loaded into a buffer, so `hr recent` lists it.
 let g:hr_track_opens    = get(g:, 'hr_track_opens', 1)
+" Put the cursor on an article's bookmark when it loads.
+let g:hr_resume         = get(g:, 'hr_resume', 1)
 
 augroup hr_track_opens
   autocmd!
-  autocmd BufReadPost *.md call hr#track_open(expand('<afile>:p'))
+  autocmd BufReadPost *.md call hr#on_read(expand('<afile>:p'))
 augroup END
 
 " The four openers take optional `hr list` flags; passing none leaves the
@@ -73,9 +76,16 @@ command! -bar          -nargs=0 HrCorruptUndo call hr#corrupt_undo()
 " Jump from an opened article to its row in the feed panel.
 command! -bar -nargs=0 HrLocate call hr#locate()
 
+" Reading place: :HrBookmark saves the cursor (! clears), :HrResume
+" returns to it.
+command! -bar -bang -nargs=0 HrBookmark call hr#bookmark(<bang>0)
+command! -bar       -nargs=0 HrResume   call hr#resume()
+
 " <Plug> targets so a config can bind its own keys (the buffer-local
 " defaults installed on opened articles point at these).
 xnoremap <silent> <Plug>(HrCorrupt)     :<C-u>call hr#corrupt('')<CR>
 xnoremap <silent> <Plug>(HrCorruptNote) :<C-u>call hr#corrupt(input('corruption note: '))<CR>
 nnoremap <silent> <Plug>(HrCorruptUndo) :<C-u>call hr#corrupt_undo()<CR>
 nnoremap <silent> <Plug>(HrLocate)      :<C-u>call hr#locate()<CR>
+nnoremap <silent> <Plug>(HrBookmark)    :<C-u>call hr#bookmark(0)<CR>
+nnoremap <silent> <Plug>(HrResume)      :<C-u>call hr#resume()<CR>
