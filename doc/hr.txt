@@ -89,6 +89,21 @@ so the cursor has somewhere to land — the same trade |g:hr_show_read| makes
 for read items.
 
 ==============================================================================
+VIEWS                                                              *hr-views*
+
+A view is one token of the filter flipped on or off, from the panel keys or
+from anywhere with |:HrView|:
+
+    t   :HrView recent         list <-> recent, see |hr-recent|
+    F   :HrView --fav          favorites only
+    B   :HrView --bookmarked   bookmarked only, see |hr-bookmarks|
+
+Any other single flag works too (`:HrView --unread`). Flipping keeps the rest
+of the filter, opens the panel if it is closed and focuses it, and puts the
+cursor on the article you were on, the panel row or the article being read,
+when the new view lists it.
+
+==============================================================================
 RECENT                                                            *hr-recent*
 
 A leading `recent` switches the panel from `hr list` to `hr recent`: the
@@ -151,6 +166,9 @@ COMMANDS                                                        *hr-commands*
 that scope the panel — `:Hr --group books`, `:HrStart --feed matklad
 --unread`. Passing none leaves the current scope alone, so a bare :Hr keeps
 toggling the view you set up. See |hr-filter|.
+
+:HrView {view}          Flip one view in the filter and show the panel,
+                        e.g. `:HrView recent`. See |hr-views|.
 
 :HrFilter [flags]       Set the flags scoping the panel, applying them at
                         once when it is open. With no arguments, report the

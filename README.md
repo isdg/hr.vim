@@ -53,6 +53,7 @@ Then `:helptags ALL` (or `:Helptags`) once to index the docs.
 | `:HrRefresh` | re-fetch the list |
 | `:HrSync` | `hr sync` then refresh |
 | `:HrFilter [flags]` | scope the panel; no args reports, `-` clears |
+| `:HrView {view}` | flip `recent`, `--fav`, `--bookmarked`, … and show the panel |
 
 `:Hr`, `:HrToggle`, `:HrOpen` and `:HrStart` also take optional `hr list`
 flags that scope the panel:

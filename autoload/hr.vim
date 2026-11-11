@@ -292,32 +292,6 @@ function! s:rename_current() abort
   redraw
 endfunction
 
-" Flip a:flag in the filter and keep the cursor on the same article when
-" the new view still lists it. 'recent' is a subcommand, so it leads.
-function! s:toggle_view(flag) abort
-  let l:it = s:current_item()
-  let l:args = s:filter_args()
-  if a:flag ==# 'recent'
-    let l:args = get(l:args, 0, '') ==# 'recent'
-          \ ? l:args[1:] : ['recent'] + l:args
-  else
-    let l:i = index(l:args, a:flag)
-    if l:i >= 0
-      call remove(l:args, l:i)
-    else
-      call add(l:args, a:flag)
-    endif
-  endif
-  let g:hr_filter = l:args
-  call s:apply_filter()
-
-  let l:row = empty(l:it) ? 0 : s:row_of(s:state.items,
-        \ resolve(fnamemodify(get(l:it, 'path', ''), ':p')))
-  call cursor(max([l:row, 1]), 1)
-  let l:label = s:filter_label()
-  echo empty(l:label) ? 'hr: all articles' : 'hr: ' . l:label
-endfunction
-
 function! s:sync_then_redraw() abort
   call s:run(['sync'])
   call s:redraw()
@@ -348,10 +322,10 @@ function! s:setup_keymaps() abort
   nnoremap <buffer><silent><nowait> u    :call <SID>act('unread')<CR>
   nnoremap <buffer><silent><nowait> f    :call <SID>act('fav')<CR>
   nnoremap <buffer><silent><nowait> a    :call <SID>rename_current()<CR>
-  nnoremap <buffer><silent><nowait> t    :call <SID>toggle_view('recent')<CR>
-  nnoremap <buffer><silent><nowait> F    :call <SID>toggle_view('--fav')<CR>
+  nnoremap <buffer><silent><nowait> t    :call hr#toggle_view('recent')<CR>
+  nnoremap <buffer><silent><nowait> F    :call hr#toggle_view('--fav')<CR>
   nnoremap <buffer><silent><nowait> B
-        \ :call <SID>toggle_view('--bookmarked')<CR>
+        \ :call hr#toggle_view('--bookmarked')<CR>
   nnoremap <buffer><silent><nowait> R    :call <SID>redraw()<CR>
   nnoremap <buffer><silent><nowait> s    :call <SID>sync_then_redraw()<CR>
   nnoremap <buffer><silent><nowait> q    :call hr#close()<CR>
@@ -769,6 +743,50 @@ function! s:apply_filter() abort
   if l:cur != s:state.winid && win_id2win(l:cur) != 0
     call win_gotoid(l:cur)
   endif
+endfunction
+
+" Flip one token of the filter (|hr-views|) and show the panel. The cursor
+" stays on the article it was on, the panel row or the one being read, when
+" the new view lists it. 'recent' is a subcommand, so it leads.
+function! hr#toggle_view(flag) abort
+  if s:is_open() && win_getid() == s:state.winid
+    let l:anchor = get(s:current_item(), 'path', '')
+  else
+    let l:anchor = &buftype ==# '' ? expand('%:p') : ''
+  endif
+  let l:args = s:filter_args()
+  if a:flag ==# 'recent'
+    let l:args = get(l:args, 0, '') ==# 'recent'
+          \ ? l:args[1:] : ['recent'] + l:args
+  else
+    let l:i = index(l:args, a:flag)
+    if l:i >= 0
+      call remove(l:args, l:i)
+    else
+      call add(l:args, a:flag)
+    endif
+  endif
+  let g:hr_filter = l:args
+  if s:is_open()
+    call s:apply_filter()
+    call win_gotoid(s:state.winid)
+  else
+    call hr#open()
+  endif
+  if !s:is_open()
+    return
+  endif
+
+  let l:row = empty(l:anchor) ? 0
+        \ : s:row_of(s:state.items, resolve(fnamemodify(l:anchor, ':p')))
+  call cursor(max([l:row, 1]), 1)
+  let l:label = s:filter_label()
+  echo empty(l:label) ? 'hr: all articles' : 'hr: ' . l:label
+endfunction
+
+function! hr#view_complete(lead, line, pos) abort
+  let l:views = ['recent', '--fav', '--bookmarked', '--unread', '--corrupted']
+  return filter(l:views, 'stridx(v:val, a:lead) == 0')
 endfunction
 
 function! hr#sync() abort
