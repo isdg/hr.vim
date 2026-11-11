@@ -18,8 +18,8 @@ g:hr_binary     CLI name or path.                       Default: "hr"
 
                                                                 *g:hr_vault*
 g:hr_vault      Vault directory. When empty, the plugin :cd's into the
-                vault hr would use: the one holding the current
-                directory, else $HR_VAULT.
+                vault `hr vault` names: the one holding the current
+                directory, else $HR_VAULT, else hr's .hrrc.
                 When set, it is passed to the CLI as `-C <vault>`.
                                                         Default: ""
 

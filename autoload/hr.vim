@@ -23,14 +23,14 @@ function! s:truthy(v) abort
   return type(a:v) == v:t_bool ? a:v is v:true : (!empty(a:v) && a:v != 0)
 endfunction
 
-" The vault hr itself picks without -C: the one holding the current
-" directory, else $HR_VAULT.
+" The vault hr would use from here, asked of the CLI so the panel follows
+" the current directory, $HR_VAULT and hr's .hrrc exactly as hr does.
 function! s:resolve_vault() abort
   if !empty(g:hr_vault)
     return g:hr_vault
   endif
-  let l:toml = findfile('hr.toml', '.;')
-  return !empty(l:toml) ? fnamemodify(l:toml, ':p:h') : expand($HR_VAULT)
+  let l:out = systemlist(shellescape(g:hr_binary) . ' vault')
+  return v:shell_error == 0 && !empty(l:out) ? l:out[0] : ''
 endfunction
 
 " Only pass -C when the vault is configured explicitly; otherwise we cd into
