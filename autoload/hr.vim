@@ -23,31 +23,18 @@ function! s:truthy(v) abort
   return type(a:v) == v:t_bool ? a:v is v:true : (!empty(a:v) && a:v != 0)
 endfunction
 
-" The vault line of hr's config: $HR_HOME/config.toml (default ~/.hr), or
-" ~/.hrrc until an older hr's config has been moved there.
-function! s:vault_from_rc() abort
-  let l:home = empty($HR_HOME) ? expand('~/.hr') : $HR_HOME
-  for l:path in [l:home . '/config.toml', expand('~/.hrrc')]
-    if !filereadable(l:path)
-      continue
-    endif
-    for l:line in readfile(l:path)
-      let l:m = matchlist(l:line, 'vault\s*=\s*"\([^"]*\)"')
-      if !empty(l:m)
-        return l:m[1]
-      endif
-    endfor
-    return ''
-  endfor
-  return ''
-endfunction
-
+" The vault hr itself picks without -C: the one holding the current
+" directory, else $HR_VAULT.
 function! s:resolve_vault() abort
-  return !empty(g:hr_vault) ? g:hr_vault : s:vault_from_rc()
+  if !empty(g:hr_vault)
+    return g:hr_vault
+  endif
+  let l:toml = findfile('hr.toml', '.;')
+  return !empty(l:toml) ? fnamemodify(l:toml, ':p:h') : expand($HR_VAULT)
 endfunction
 
-" Only pass -C when the vault is configured explicitly; when it comes from
-" hr's config we cd into it instead (see hr#open), so the CLI finds it itself.
+" Only pass -C when the vault is configured explicitly; otherwise we cd into
+" it instead (see hr#open), so the CLI finds it itself.
 function! s:base_cmd() abort
   let l:cmd = [g:hr_binary]
   if !empty(g:hr_vault)

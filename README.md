@@ -124,7 +124,7 @@ switches to the bookmarks view, newest bookmark first. Bind `<Plug>(HrBookmark)`
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `g:hr_binary` | `"hr"` | CLI name or path |
-| `g:hr_vault` | `""` | vault dir; empty → read from `~/.hr/config.toml` and `:cd` into it |
+| `g:hr_vault` | `""` | vault dir; empty → the one holding the cwd, else `$HR_VAULT`, and `:cd` into it |
 | `g:hr_side` | `"left"` | sidebar side (`left`/`right`) |
 | `g:hr_width` | `60` | sidebar width in columns |
 | `g:hr_show_read` | `1` | `1` = include read items, `0` = unread only |

@@ -17,11 +17,11 @@ Set these globals before the plugin loads (or any time; they are read live):
 g:hr_binary     CLI name or path.                       Default: "hr"
 
                                                                 *g:hr_vault*
-g:hr_vault      Vault directory. When empty, the vault is read from the
-                `vault = "..."` line in hr's config, ~/.hr/config.toml
-                ($HR_HOME), and the plugin :cd's into it.
+g:hr_vault      Vault directory. When empty, the plugin :cd's into the
+                vault hr would use: the one holding the current
+                directory, else $HR_VAULT.
                 When set, it is passed to the CLI as `-C <vault>`.
-                                                        Default: "" (use rc)
+                                                        Default: ""
 
                                                                 *g:hr_side*
 g:hr_side       Sidebar side: "left" or "right".        Default: "left"
