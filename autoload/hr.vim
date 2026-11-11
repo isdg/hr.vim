@@ -7,8 +7,8 @@
 "
 " Buffer-local keys (active only in the sidebar):
 "   <CR>/o open   r read   u unread   f fav   a alias
-"   t list/recent   F favorites only   B bookmarked only
-"   R refresh   s sync   q close   ? help
+"   R list/recent   F favorites only   B bookmarked only
+"   gr refresh   s sync   q close   ? help
 
 let s:state = {'winid': -1, 'bufnr': -1, 'prev_winid': -1, 'items': []}
 
@@ -314,10 +314,10 @@ function! s:show_help() abort
         \ '  u       mark unread',
         \ '  f       toggle favorite',
         \ '  a       set alias (rename label)',
-        \ '  t       flip list / recent (newest opened)',
+        \ '  R       flip list / recent (newest opened)',
         \ '  F       toggle favorites only',
         \ '  B       toggle bookmarked only',
-        \ '  R       refresh',
+        \ '  gr      refresh',
         \ '  s       sync + refresh',
         \ '  q       close panel',
         \ '  ?       this help',
@@ -331,11 +331,11 @@ function! s:setup_keymaps() abort
   nnoremap <buffer><silent><nowait> u    :call <SID>act('unread')<CR>
   nnoremap <buffer><silent><nowait> f    :call <SID>act('fav')<CR>
   nnoremap <buffer><silent><nowait> a    :call <SID>rename_current()<CR>
-  nnoremap <buffer><silent><nowait> t    :call hr#toggle_view('recent')<CR>
+  nnoremap <buffer><silent><nowait> R    :call hr#toggle_view('recent')<CR>
   nnoremap <buffer><silent><nowait> F    :call hr#toggle_view('--fav')<CR>
   nnoremap <buffer><silent><nowait> B
         \ :call hr#toggle_view('--bookmarked')<CR>
-  nnoremap <buffer><silent><nowait> R    :call <SID>redraw()<CR>
+  nnoremap <buffer><silent><nowait> gr   :call <SID>redraw()<CR>
   nnoremap <buffer><silent><nowait> s    :call <SID>sync_then_redraw()<CR>
   nnoremap <buffer><silent><nowait> q    :call hr#close()<CR>
   nnoremap <buffer><silent><nowait> ?    :call <SID>show_help()<CR>

@@ -84,10 +84,10 @@ Keys inside the sidebar:
 | `u` | mark unread |
 | `f` | toggle favorite |
 | `a` | set alias (rename label) |
-| `t` | switch list ↔ recent (views replace each other) |
+| `R` | switch list ↔ recent (views replace each other) |
 | `F` | toggle favorites only (`--fav`) |
 | `B` | toggle bookmarked only (`--bookmarked`) |
-| `R` / `s` | refresh / sync + refresh |
+| `gr` / `s` | refresh / sync + refresh |
 | `q` | close |
 | `?` | help |
 
